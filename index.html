@@ -17,21 +17,14 @@
         .nav-item { position: relative; }
         .nav-item::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 0; background: #2563eb; transition: width 0.3s; }
         .nav-item:hover::after { width: 100%; }
-        
         .float-btn { animation: bounceIn 0.5s; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
-        .float-btn:hover { transform: scale(1.1); }
-        @keyframes bounceIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-        
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* HTML Content Styles */
-        .html-content iframe { max-width: 100%; margin: 15px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .html-content a { color: #2563eb; text-decoration: underline; font-weight: 500; }
-        .html-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .html-content ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .html-content p { margin-bottom: 1rem; }
-        .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
+        
+        .html-content iframe { max-width: 100%; margin: 15px auto; display: block; border-radius: 8px; }
+        .html-content a { color: #2563eb; text-decoration: underline; }
+        .html-content ul { list-style-type: disc; margin-left: 1.5rem; }
+        .html-content img { max-width: 100%; height: auto; border-radius: 8px; }
     </style>
 </head>
 <body>
@@ -39,9 +32,9 @@
 
     <script type="text/babel">
         // ==========================================
-        //  วาง URL Apps Script ที่ DEPLOY ใหม่แล้วตรงนี้
+        //  วาง URL Apps Script ตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_t57h8ILKUnPfOYoAEAq4cZFmtE1j5wONfZPf-6z0E4KWIWG5Oq_V8gxVB2cCfRlwJA/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxpevqXxcWiUMppaphWvaGmRyu1NN_XCXC5SBDDxI6FxV9sbI95hG4XLsMQjjXURG9s6Q/exec"; 
         
         const { useState, useEffect } = React;
 
@@ -55,14 +48,7 @@
         const Navbar = ({ setPage, logoUrl, pages, mainMenus }) => {
             const [mobileOpen, setMobileOpen] = useState(false);
             const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => (a.Order||0) - (b.Order||0)) : [];
-            
-            // ดึงเมนูย่อยและเรียงลำดับ
-            const getSubMenu = (cat) => {
-                return pages
-                    .filter(p => p.MenuCategory === cat)
-                    .sort((a,b) => (a.Order||0) - (b.Order||0))
-                    .map(p => ({id: p.PageKey, label: p.Title}));
-            };
+            const getSubMenu = (cat) => pages.filter(p => p.MenuCategory === cat).sort((a,b) => (a.Order||0) - (b.Order||0)).map(p => ({id: p.PageKey, label: p.Title}));
 
             return (
                 <nav className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
@@ -118,8 +104,8 @@
 
         const NewsDetail = ({ item, onBack }) => (
             <div className="container mx-auto px-4 py-12 fade-in">
-                <button onClick={onBack} className="mb-6 text-slate-500 hover:text-blue-600 flex items-center gap-2 transition font-medium">
-                    <i className="fas fa-arrow-left"></i> ย้อนกลับ
+                <button onClick={onBack} className="mb-6 text-slate-600 hover:text-white hover:bg-blue-600 border border-slate-300 px-4 py-2 rounded-lg flex items-center gap-2 transition font-bold shadow-sm">
+                    <i className="fas fa-arrow-left"></i> ย้อนกลับหน้าแรก
                 </button>
                 <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100 max-w-5xl mx-auto">
                     {item.ImageURL && (
@@ -142,7 +128,7 @@
         const NewsCard = ({ n, onClick }) => (
             <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-xl hover:-translate-y-2 transition duration-300">
                 <div className="h-52 overflow-hidden relative bg-gray-100 flex justify-center items-center">
-                     <img src={n.ImageURL} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=No+Image';}} />
+                     <img src={n.ImageURL} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=News';}} />
                      <div className="absolute top-3 left-3">
                         <span className="bg-white/90 backdrop-blur text-blue-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm">{n.Category}</span>
                      </div>
@@ -160,32 +146,14 @@
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
-            const [uploading, setUploading] = useState(false);
 
             const labelMap = {
-                'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'รูปภาพ',
+                'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ',
                 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย',
                 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู',
                 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก'
             };
             const getLabel = (key) => labelMap[key] || key;
-
-            const handleFileChange = (e, field) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.type !== 'image/png') { alert('ระบบรองรับเฉพาะไฟล์ .png เท่านั้น'); e.target.value = null; return; }
-                setUploading(true);
-                const reader = new FileReader();
-                reader.onloadend = async () => {
-                    try {
-                        const res = await api.post({ action: 'uploadImage', fileData: reader.result, fileName: file.name, mimeType: file.type });
-                        if (res.success) { setForm(prev => ({ ...prev, [field]: res.url })); alert('อัปโหลดสำเร็จ!'); }
-                        else { alert('เกิดข้อผิดพลาดในการอัปโหลด'); }
-                    } catch(err) { alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'); }
-                    setUploading(false);
-                };
-                reader.readAsDataURL(file);
-            };
 
             const handleSave = async (e) => {
                 e.preventDefault();
@@ -199,7 +167,6 @@
                 if(confirm('ลบรายการนี้?')) { await api.post({ action: 'delete', sheet: tab, id }); reload(); }
             };
 
-            // Sorting Function
             const handleSort = async (item, direction) => {
                 const sortedList = [...data[tab]].sort((a,b) => (a.Order||0) - (b.Order||0));
                 const index = sortedList.findIndex(i => (i.ID || i.PageKey) === (item.ID || item.PageKey));
@@ -222,6 +189,24 @@
             const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'หน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
             const getNextOrder = () => (data[tab].reduce((p,c) => Math.max(p, c.Order||0), 0) + 1);
 
+            // Group Pages for Display
+            const getGroupedPages = () => {
+                if (tab !== 'Pages') return null;
+                const groups = {};
+                // Init Groups
+                data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] });
+                groups['other'] = { label: 'หน้าลอย / ไม่ระบุ', items: [] };
+
+                data.Pages.sort((a,b)=>(a.Order||0)-(b.Order||0)).forEach(p => {
+                    if (p.MenuCategory && groups[p.MenuCategory]) {
+                        groups[p.MenuCategory].items.push(p);
+                    } else {
+                        groups['other'].items.push(p);
+                    }
+                });
+                return groups;
+            };
+
             return (
                 <div className="fixed inset-0 bg-slate-50 z-[200] flex flex-col text-slate-800 font-sarabun">
                     <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 border-b">
@@ -243,6 +228,7 @@
                             {!['Settings'].includes(tab) && !editItem && (
                                 <button onClick={()=>setEditItem({Order: getNextOrder()})} className="bg-blue-600 text-white px-5 py-2.5 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2 mb-6"><i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่</button>
                             )}
+                            
                             {editItem && (
                                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
                                     <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-blue-100">
@@ -251,55 +237,80 @@
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {/* Menus specific */}
                                             {tab === 'Menus' && <>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div>
                                             </>}
-                                            {/* Pages specific */}
                                             {tab === 'Pages' && <>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อหัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
                                             </>}
-                                            {/* General Fields */}
                                             {Object.keys(form).map(k => {
                                                 if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null;
                                                 return <div key={k}>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>
                                                     {(k === 'ImageURL' || k === 'Value') ? (
                                                         <div className="space-y-2">
-                                                            <input className="w-full border p-3 rounded-lg bg-gray-50" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="URL หรือ อัปโหลด" />
-                                                            <label className="bg-blue-100 text-blue-700 px-4 py-2 rounded-lg cursor-pointer inline-block text-sm font-bold hover:bg-blue-200"><i className="fas fa-upload mr-2"></i> อัปโหลดรูป (.png)<input type="file" accept=".png" className="hidden" onChange={(e) => handleFileChange(e, k)} /></label>
-                                                            {uploading && <span className="ml-2 text-sm text-blue-600 animate-pulse">กำลังอัปโหลด...</span>}
+                                                            <input className="w-full border p-3 rounded-lg bg-gray-50" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="URL รูปภาพ" />
                                                             {form[k] && <img src={form[k]} className="h-20 rounded border p-1" onError={(e)=>e.target.style.display='none'} />}
                                                         </div>
                                                     ) : k === 'Content' ? (
-                                                        <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-40 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea><p className="text-xs text-gray-400">รองรับ HTML Code (Iframe, Link)</p></div>
+                                                        <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-40 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div>
                                                     ) : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}
                                                 </div>
                                             })}
-                                            <button className="bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition" disabled={uploading}>บันทึกข้อมูล</button>
+                                            <button className="bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition">บันทึกข้อมูล</button>
                                         </form>
                                     </div>
                                 </div>
                             )}
-                            {/* List with Reorder */}
+
+                            {/* Data Table */}
                             {tab !== 'Settings' && !editItem && (
-                                <div className="grid gap-3 animate-fadeIn">
-                                    {data[tab].sort((a,b)=> (a.Order||0)-(b.Order||0)).map((item,i) => (
-                                        <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition">
-                                            <div className="flex items-center gap-4">
-                                                {item.ImageURL && <img src={item.ImageURL} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}
-                                                <div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex flex-col gap-1 mr-2"><button onClick={()=>handleSort(item, -1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center text-gray-600"><i className="fas fa-chevron-up"></i></button><button onClick={()=>handleSort(item, 1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center text-gray-600"><i className="fas fa-chevron-down"></i></button></div>
-                                                <button onClick={()=>{setEditItem(item); setForm(item);}} className="text-white bg-blue-500 w-9 h-9 rounded-lg hover:bg-blue-600 shadow flex items-center justify-center"><i className="fas fa-edit"></i></button>
-                                                <button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-white bg-red-500 w-9 h-9 rounded-lg hover:bg-red-600 shadow flex items-center justify-center"><i className="fas fa-trash"></i></button>
-                                            </div>
+                                <div className="space-y-6">
+                                    {tab === 'Pages' ? (
+                                        Object.entries(getGroupedPages()).map(([key, group]) => (
+                                            group.items.length > 0 && (
+                                                <div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                                                    <div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between">
+                                                        <span>{group.label}</span>
+                                                        <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span>
+                                                    </div>
+                                                    <div className="divide-y">
+                                                        {group.items.map((item, i) => (
+                                                            <div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition">
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="font-bold text-slate-800">{item.Title}</div>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex flex-col gap-1 mr-2"><button onClick={()=>handleSort(item, -1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center"><i className="fas fa-chevron-up"></i></button><button onClick={()=>handleSort(item, 1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center"><i className="fas fa-chevron-down"></i></button></div>
+                                                                    <button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700"><i className="fas fa-edit fa-lg"></i></button>
+                                                                    <button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700"><i className="fas fa-trash fa-lg"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        ))
+                                    ) : (
+                                        <div className="grid gap-3">
+                                            {data[tab].sort((a,b)=> (a.Order||0)-(b.Order||0)).map((item,i) => (
+                                                <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition">
+                                                    <div className="flex items-center gap-4">
+                                                        {item.ImageURL && <img src={item.ImageURL} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}
+                                                        <div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex flex-col gap-1 mr-2"><button onClick={()=>handleSort(item, -1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center"><i className="fas fa-chevron-up"></i></button><button onClick={()=>handleSort(item, 1)} className="w-6 h-6 bg-gray-100 rounded hover:bg-blue-100 text-xs flex items-center justify-center"><i className="fas fa-chevron-down"></i></button></div>
+                                                        <button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700"><i className="fas fa-edit fa-lg"></i></button>
+                                                        <button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700"><i className="fas fa-trash fa-lg"></i></button>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             )}
                         </main>
@@ -325,7 +336,7 @@
                 if(res.success) { setIsAdmin(true); setShowLogin(false); } else { alert('รหัสผิดพลาด'); }
             };
 
-            if(!data) return <div className="h-screen flex items-center justify-center bg-slate-50 flex-col gap-4"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><p className="text-slate-400 font-sarabun animate-pulse">กำลังโหลดข้อมูลโรงเรียน...</p></div>;
+            if(!data) return <div className="h-screen flex items-center justify-center bg-slate-50 flex-col gap-4"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><p className="text-slate-400 font-sarabun animate-pulse">กำลังโหลด...</p></div>;
 
             const logoUrl = data.Config?.find(c => c.Key === 'SchoolLogo')?.Value || '';
 
