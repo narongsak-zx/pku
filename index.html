@@ -28,7 +28,6 @@
         .html-content iframe { max-width: 100%; margin: 15px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .html-content a { color: #2563eb; text-decoration: underline; font-weight: 500; }
         .html-content ul { list-style-type: disc; margin-left: 1.5rem; margin-bottom: 1rem; }
-        .html-content ol { list-style-type: decimal; margin-left: 1.5rem; margin-bottom: 1rem; }
         .html-content p { margin-bottom: 1rem; }
         .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
     </style>
@@ -38,9 +37,9 @@
 
     <script type="text/babel">
         // ==========================================
-        //  วาง URL Apps Script ตรงนี้
+        //  วาง URL Apps Script (อันที่ Deploy ใหม่)
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0CbKY17BlvuoXWek30yzPXa_9ohuMIgds_23THszIKYzBmdwmsTdiM7kgLgemBUQ/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw-7sWWrCzKhIHAZXguZ_oWrIjXEgfI4jwekoC5D_20HmTdQeHxSpdbOCvv0arMI2FP-g/exec"; 
         
         const { useState, useEffect } = React;
 
@@ -116,8 +115,8 @@
 
         const NewsDetail = ({ item, onBack }) => (
             <div className="container mx-auto px-4 py-12 fade-in">
-                <button onClick={onBack} className="mb-6 text-slate-600 hover:text-white hover:bg-blue-600 border border-slate-300 px-4 py-2 rounded-lg flex items-center gap-2 transition font-bold shadow-sm">
-                    <i className="fas fa-arrow-left"></i> ย้อนกลับไปหน้ารวมข่าว
+                <button onClick={onBack} className="mb-6 bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 px-5 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow">
+                    <i className="fas fa-arrow-left"></i> ย้อนกลับไปหน้าข่าวสาร
                 </button>
                 <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-gray-100 max-w-5xl mx-auto">
                     {item.ImageURL && (
@@ -159,14 +158,11 @@
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
             
-            // State สำหรับหน้าตั้งค่า (Settings)
-            const [settingsForm, setSettingsForm] = useState({
-                SchoolLogo: '',
-                SchoolName: ''
-            });
+            // State for Settings
+            const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
 
             const labelMap = {
-                'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ',
+                'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)',
                 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย',
                 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู',
                 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก'
@@ -178,9 +174,7 @@
                 if(!confirm('ยืนยันการบันทึก?')) return;
                 
                 if (tab === 'Settings') {
-                    // Save Logo
                     await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo } });
-                    // Save Name
                     await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolName', Value: settingsForm.SchoolName } });
                 } else {
                     let payload = { ...form, ID: editItem?.ID || editItem?.PageKey };
@@ -194,32 +188,17 @@
                 if(confirm('ลบรายการนี้?')) { await api.post({ action: 'delete', sheet: tab, id }); reload(); }
             };
 
-            // Fix Sorting Logic (Wait for update)
             const handleSort = async (item, direction) => {
-                // Clone list for safe mutation
-                let sortedList = [...data[tab]].sort((a,b) => (a.Order||0) - (b.Order||0));
-                
-                // Find current index in the sorted list
+                const sortedList = [...data[tab]].sort((a,b) => (a.Order||0) - (b.Order||0));
                 const index = sortedList.findIndex(i => (i.ID || i.PageKey) === (item.ID || item.PageKey));
-                
-                // Boundary checks
                 if ((direction === -1 && index === 0) || (direction === 1 && index === sortedList.length - 1)) return;
-
                 const currentItem = sortedList[index];
                 const swapItem = sortedList[index + direction];
-
-                // Swap Order values (Ensure numeric)
-                const currentOrder = Number(currentItem.Order) || 0;
-                const swapOrder = Number(swapItem.Order) || 0;
-
-                // Create new objects to save
-                const newCurrent = { ...currentItem, Order: swapOrder, ID: currentItem.ID || currentItem.PageKey };
-                const newSwap = { ...swapItem, Order: currentOrder, ID: swapItem.ID || swapItem.PageKey };
-
-                // Save sequentially to avoid race condition
-                await api.post({ action: 'save', sheet: tab, data: newCurrent });
-                await api.post({ action: 'save', sheet: tab, data: newSwap });
-                
+                const tempOrder = currentItem.Order || 0;
+                currentItem.Order = swapItem.Order || 0;
+                swapItem.Order = tempOrder;
+                await api.post({ action: 'save', sheet: tab, data: { ...currentItem, ID: currentItem.ID || currentItem.PageKey } });
+                await api.post({ action: 'save', sheet: tab, data: { ...swapItem, ID: swapItem.ID || swapItem.PageKey } });
                 reload();
             };
 
@@ -227,18 +206,19 @@
                 const logo = data.Config.find(c => c.Key === 'SchoolLogo')?.Value || '';
                 const name = data.Config.find(c => c.Key === 'SchoolName')?.Value || '';
                 setSettingsForm({ SchoolLogo: logo, SchoolName: name });
-                // Hack to use editItem mode for settings view
                 setEditItem({ settings: true }); 
             }
 
-            const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'หน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
+            const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'เนื้อหาหน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
             const getNextOrder = () => (data[tab].reduce((p,c) => Math.max(p, c.Order||0), 0) + 1);
 
             const getGroupedPages = () => {
                 if (tab !== 'Pages') return null;
                 const groups = {};
+                // Create Groups from Menus
                 data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] });
-                groups['other'] = { label: 'หน้าลอย / ไม่ระบุ', items: [] };
+                groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] };
+                
                 data.Pages.sort((a,b)=>(a.Order||0)-(b.Order||0)).forEach(p => {
                     if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p);
                     else groups['other'].items.push(p);
@@ -275,51 +255,35 @@
                                             <h3 className="font-bold text-xl text-blue-800">{tab==='Settings' ? 'ตั้งค่าระบบ' : 'แก้ไขข้อมูล'}</h3>
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
-                                        
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {/* SETTINGS FORM */}
                                             {tab === 'Settings' && <>
-                                                <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label>
-                                                    <input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} />
-                                                </div>
-                                                <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label>
-                                                    <input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />
-                                                    {settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}
-                                                </div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้ (วางลิงก์รูปที่นี่)</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div>
                                             </>}
-
-                                            {/* DATA FORMS */}
-                                            {tab !== 'Settings' && <>
-                                                {/* Specific Fields */}
-                                                {tab === 'Menus' && <>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div>
-                                                </>}
-                                                {tab === 'Pages' && <>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
-                                                </>}
-                                                {/* General Fields Loop */}
-                                                {Object.keys(form).map(k => {
-                                                    if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null;
-                                                    return <div key={k}>
-                                                        <label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>
-                                                        {k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-40 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})}></textarea><p className="text-xs text-gray-400">รองรับ HTML Code (Iframe, Link)</p></div>
-                                                        : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}
-                                                    </div>
-                                                })}
+                                            {tab === 'Menus' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div>
                                             </>}
-                                            
+                                            {tab === 'Pages' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
+                                            </>}
+                                            {Object.keys(form).map(k => {
+                                                if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null;
+                                                return <div key={k}>
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>
+                                                    {k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-40 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div>
+                                                    : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}
+                                                </div>
+                                            })}
                                             <button className="bg-blue-600 text-white py-3 rounded-lg font-bold shadow hover:bg-blue-700 transition">บันทึกข้อมูล</button>
                                         </form>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Data Table with Sort Buttons */}
+                            {/* Data Table */}
                             {tab !== 'Settings' && !editItem && (
                                 <div className="space-y-6">
                                     {tab === 'Pages' ? (
@@ -327,18 +291,14 @@
                                             group.items.length > 0 && (
                                                 <div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                                                     <div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between">
-                                                        <span>{group.label}</span>
-                                                        <span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length}</span>
+                                                        <span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length}</span>
                                                     </div>
                                                     <div className="divide-y">
                                                         {group.items.map((item, i) => (
                                                             <div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition">
                                                                 <div className="font-bold text-slate-800">{item.Title}</div>
                                                                 <div className="flex items-center gap-2">
-                                                                    <div className="flex gap-1 mr-2">
-                                                                        <button onClick={()=>handleSort(item, -1)} className="w-7 h-7 bg-gray-200 hover:bg-blue-200 rounded flex items-center justify-center text-xs"><i className="fas fa-arrow-up"></i></button>
-                                                                        <button onClick={()=>handleSort(item, 1)} className="w-7 h-7 bg-gray-200 hover:bg-blue-200 rounded flex items-center justify-center text-xs"><i className="fas fa-arrow-down"></i></button>
-                                                                    </div>
+                                                                    <div className="flex gap-1 mr-2"><button onClick={()=>handleSort(item, -1)} className="w-7 h-7 bg-gray-200 hover:bg-blue-200 rounded flex items-center justify-center text-xs"><i className="fas fa-arrow-up"></i></button><button onClick={()=>handleSort(item, 1)} className="w-7 h-7 bg-gray-200 hover:bg-blue-200 rounded flex items-center justify-center text-xs"><i className="fas fa-arrow-down"></i></button></div>
                                                                     <button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button>
                                                                     <button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button>
                                                                 </div>
