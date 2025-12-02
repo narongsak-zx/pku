@@ -115,13 +115,14 @@
 
         const getCleanImageUrl = (url) => {
             if (!url) return '';
-            if (url.includes('drive.google.com') && url.includes('/view')) {
-                return url.replace('/view', '/preview').replace('file/d/', 'uc?id=').replace('/preview', '');
+            const u = url.trim();
+            if (u.includes('drive.google.com') && u.includes('/view')) {
+                return u.replace('/view', '/preview').replace('file/d/', 'uc?id=').replace('/preview', '');
             }
-            if (url.includes('drive.google.com/open?id=')) {
-                return url.replace('open?id=', 'uc?id=');
+            if (u.includes('drive.google.com/open?id=')) {
+                return u.replace('open?id=', 'uc?id=');
             }
-            return url;
+            return u;
         };
 
         const getExcerpt = (html, length = 10) => {
@@ -210,19 +211,20 @@
             );
         };
 
-        // --- NewsDetail: ปรับขนาดรูปภาพ 2000x1414 ---
+        // --- NewsDetail: ปรับขนาด 1280x720 และให้เล็กลง (max-w-4xl ประมาณ 896px) ---
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
                 <div className="content-container py-12 fade-in">
                     <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group"><i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ</button>
                     <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
                         {item.ImageURL && (
-                            <div className="w-full flex justify-center mb-0">
+                            <div className="w-full flex justify-center bg-gray-100 py-6">
+                                {/* กำหนดสัดส่วน 16:9 และจำกัดความกว้างไม่ให้ใหญ่เกินไป */}
                                 <img 
                                     src={getCleanImageUrl(item.ImageURL)} 
-                                    className="w-full h-auto object-cover"
-                                    style={{ maxWidth: '2000px', aspectRatio: '2000/1414' }}
-                                    onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/2000x1414?text=No+Image';}} 
+                                    className="w-full h-auto object-cover rounded-lg shadow-md"
+                                    style={{ maxWidth: '800px', aspectRatio: '1280/720' }}
+                                    onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1280x720?text=No+Image';}} 
                                 />
                             </div>
                         )}
@@ -262,7 +264,7 @@
             const [form, setForm] = useState({});
             
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
-            const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล (เลขน้อยขึ้นก่อน)' };
+            const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL) - ใส่หลายรูปคั่นด้วยคอมม่า (,)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล (เลขน้อยขึ้นก่อน)' };
             const getLabel = (key) => labelMap[key] || key;
 
             const handleAddNew = () => {
@@ -411,7 +413,7 @@
                             {tab !== 'Settings' && !editItem && (<div className="space-y-6">
                                 {tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) 
                                 : 
-                                (<div className="grid gap-3">{getSortedAdminData(data[tab]).map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Order ? `ลำดับ: ${item.Order} | ` : ''}{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}
+                                (<div className="grid gap-3">{getSortedAdminData(data[tab]).map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL.split(',')[0])} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Order ? `ลำดับ: ${item.Order} | ` : ''}{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}
                             </div>
                             )}
                         </main>
@@ -507,16 +509,30 @@
                                 )}
                                 {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
                                 {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
-                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2>
-                                <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content}} />
-                                {/* --- Page Detail: ปรับขนาดรูปภาพ 2000x1414 --- */}
-                                {p.ImageURL && (
-                                    <img 
-                                        src={getCleanImageUrl(p.ImageURL)} 
-                                        className="mt-10 rounded-xl shadow-lg w-full h-auto object-cover" 
-                                        style={{ maxWidth: '2000px', aspectRatio: '2000/1414' }}
-                                    />
-                                )}</> })()}</div></div>}
+                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; 
+                                    // แยก URL รูปภาพด้วยเครื่องหมายจุลภาค (,)
+                                    const pageImages = p.ImageURL ? p.ImageURL.split(',').map(url => url.trim()).filter(url => url) : [];
+                                    
+                                    return (
+                                        <>
+                                            <h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2>
+                                            <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content}} />
+                                            {/* Loop แสดงรูปภาพแบบ Seamless (แนวตั้ง ต่อกัน) */}
+                                            {pageImages.length > 0 && (
+                                                <div className="mt-10 flex flex-col items-center">
+                                                    {pageImages.map((imgUrl, idx) => (
+                                                        <img 
+                                                            key={idx}
+                                                            src={getCleanImageUrl(imgUrl)} 
+                                                            className="w-full h-auto block" 
+                                                            style={{ margin: 0, padding: 0, display: 'block' }} // Seamless Style
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    ); 
+                                })()}</div></div>}
                                 {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
                                 {page.id === 'contact' && <div className="content-container py-12"><div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"><div className="md:w-1/3 bg-primary p-12 text-white flex flex-col justify-center"><h2 className="text-3xl font-bold mb-8">ติดต่อเรา</h2><ul className="space-y-6 text-white/90 text-lg"><li className="flex items-start gap-4"><i className="fas fa-school mt-1 text-blue-300"></i> <div>{schoolName}</div></li><li className="flex items-center gap-4"><i className="fas fa-phone text-blue-300"></i> โทร: 0xx-xxx-xxxx</li></ul></div><div className="md:w-2/3 h-full"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>}
                             </main>
