@@ -99,9 +99,11 @@
         .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; }
         .html-content p { margin-bottom: 1rem; }
 
-        /* Custom Scrollbar for Newsletter */
+        /* Custom Scrollbar for Newsletter & Draggable Cursor */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .cursor-grab { cursor: grab; }
+        .cursor-grabbing { cursor: grabbing; }
     </style>
 </head>
 <body>
@@ -215,16 +217,37 @@
             );
         };
 
+        // --- UPDATED COMPONENT: NewsletterSection (Draggable Slider) ---
         const NewsletterSection = ({ items }) => {
             const scrollRef = useRef(null);
+            const [isDragging, setIsDragging] = useState(false);
+            const [startX, setStartX] = useState(0);
+            const [scrollLeft, setScrollLeft] = useState(0);
+            
             const activeItems = items ? items.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
             
             if (activeItems.length === 0) return null;
 
+            // Mouse Drag Logic
+            const onMouseDown = (e) => {
+                setIsDragging(true);
+                setStartX(e.pageX - scrollRef.current.offsetLeft);
+                setScrollLeft(scrollRef.current.scrollLeft);
+            };
+            const onMouseLeave = () => setIsDragging(false);
+            const onMouseUp = () => setIsDragging(false);
+            const onMouseMove = (e) => {
+                if(!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX - scrollRef.current.offsetLeft;
+                const walk = (x - startX) * 2; // Scroll Speed
+                scrollRef.current.scrollLeft = scrollLeft - walk;
+            };
+
             const scroll = (direction) => {
                 if(scrollRef.current) {
                     const { current } = scrollRef;
-                    const amount = 350; // Scroll amount
+                    const amount = 350; 
                     current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
                 }
             };
@@ -240,14 +263,20 @@
                             </div>
                         </div>
                         
-                        <div ref={scrollRef} className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 snap-x snap-mandatory">
+                        <div 
+                            ref={scrollRef} 
+                            className={`flex gap-6 overflow-x-auto scrollbar-hide pb-4 ${isDragging ? 'cursor-grabbing snap-none' : 'cursor-grab snap-x snap-mandatory'}`}
+                            onMouseDown={onMouseDown}
+                            onMouseLeave={onMouseLeave}
+                            onMouseUp={onMouseUp}
+                            onMouseMove={onMouseMove}
+                        >
                             {activeItems.map((item, idx) => (
-                                <div key={idx} className="flex-shrink-0 w-[280px] md:w-[350px] snap-center bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group">
-                                    {/* รูปแนวตั้ง 1414x2000 */}
+                                <div key={idx} className="flex-shrink-0 w-[280px] md:w-[350px] snap-center bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group select-none">
                                     <div className="relative overflow-hidden aspect-[1414/2000]">
                                         <img 
                                             src={getCleanImageUrl(item.ImageURL)} 
-                                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                                            className="w-full h-full object-cover pointer-events-none group-hover:scale-105 transition duration-500" 
                                             onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1414x2000?text=Newsletter';}} 
                                         />
                                     </div>
@@ -263,6 +292,7 @@
                 </div>
             );
         };
+        // ----------------------------------------
 
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
