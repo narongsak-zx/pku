@@ -217,7 +217,7 @@
             );
         };
 
-        // --- UPDATED COMPONENT: NewsletterSection (Draggable Slider) ---
+        // --- COMPONENT: NewsletterSection (Draggable Slider) ---
         const NewsletterSection = ({ items }) => {
             const scrollRef = useRef(null);
             const [isDragging, setIsDragging] = useState(false);
@@ -416,7 +416,6 @@
                     </header>
                     <div className="flex flex-1 overflow-hidden">
                         <aside className="w-64 bg-white border-r hidden md:block p-4 space-y-1 overflow-y-auto">
-                            {/* เพิ่ม Newsletters ลงในเมนู Sidebar */}
                             {['News', 'Newsletters', 'Personnel', 'Banners', 'Pages'].map(t => (<button key={t} onClick={()=>{setTab(t); setEditItem(null); setForm({});}} className={`w-full text-left px-4 py-3 rounded-lg text-sm transition ${tab===t ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs[t]}</button>))}
                             <div className="border-t my-2 pt-2"><button onClick={()=>{setTab('Menus'); setEditItem(null); setForm({});}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Menus' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Menus']}</button><button onClick={()=>{setTab('Settings'); openSettings();}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Settings' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Settings']}</button></div>
                         </aside>
@@ -514,12 +513,26 @@
         };
 
         const App = () => {
-            const [page, setPage] = useState({ id: 'home' });
+            // โหลดสถานะหน้าเว็บล่าสุดจาก sessionStorage (ถ้ามี)
+            const [page, setPage] = useState(() => {
+                try {
+                    const saved = sessionStorage.getItem('phukham_page_state');
+                    return saved ? JSON.parse(saved) : { id: 'home' };
+                } catch (e) {
+                    return { id: 'home' };
+                }
+            });
+
             const [data, setData] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
             const [showLogin, setShowLogin] = useState(false);
             const [user, setUser] = useState('');
             const [pass, setPass] = useState('');
+
+            // บันทึกสถานะหน้าเว็บทุกครั้งที่มีการเปลี่ยนหน้า
+            useEffect(() => {
+                sessionStorage.setItem('phukham_page_state', JSON.stringify(page));
+            }, [page]);
 
             const load = async () => {
                 const cached = localStorage.getItem('phukhamData');
@@ -539,6 +552,7 @@
             
             useEffect(() => { 
                 load();
+                // ตรวจสอบสถานะ Admin จาก sessionStorage (เฉพาะ Tab นี้เท่านั้น)
                 const adminSession = sessionStorage.getItem('phukham_admin_session');
                 if (adminSession === 'true') {
                     setIsAdmin(true);
@@ -551,6 +565,7 @@
                 if(res.success) { 
                     setIsAdmin(true); 
                     setShowLogin(false); 
+                    // บันทึกสถานะ Admin ลง sessionStorage (รีเฟรชอยู่ ปิด Tab หาย)
                     sessionStorage.setItem('phukham_admin_session', 'true');
                 } else { 
                     alert('รหัสผิดพลาด'); 
