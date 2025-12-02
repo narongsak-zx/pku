@@ -217,18 +217,18 @@
             );
         };
 
-        // --- COMPONENT: NewsletterSection (Draggable Slider) ---
+        // --- COMPONENT: NewsletterSection (Sorted High-to-Low) ---
         const NewsletterSection = ({ items }) => {
             const scrollRef = useRef(null);
             const [isDragging, setIsDragging] = useState(false);
             const [startX, setStartX] = useState(0);
             const [scrollLeft, setScrollLeft] = useState(0);
             
-            const activeItems = items ? items.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
+            // SORT DESCENDING: b.Order - a.Order
+            const activeItems = items ? items.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => Number(b.Order||0) - Number(a.Order||0)) : [];
             
             if (activeItems.length === 0) return null;
 
-            // Mouse Drag Logic
             const onMouseDown = (e) => {
                 setIsDragging(true);
                 setStartX(e.pageX - scrollRef.current.offsetLeft);
@@ -240,7 +240,7 @@
                 if(!isDragging) return;
                 e.preventDefault();
                 const x = e.pageX - scrollRef.current.offsetLeft;
-                const walk = (x - startX) * 2; // Scroll Speed
+                const walk = (x - startX) * 2; 
                 scrollRef.current.scrollLeft = scrollLeft - walk;
             };
 
@@ -345,7 +345,7 @@
             const [form, setForm] = useState({});
             
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
-            const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล (เลขน้อยขึ้นก่อน)' };
+            const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล' };
             const getLabel = (key) => labelMap[key] || key;
 
             const handleAddNew = () => {
@@ -393,14 +393,14 @@
             
             const openSettings = () => { const logo = data.Config.find(c => c.Key === 'SchoolLogo')?.Value || ''; const name = data.Config.find(c => c.Key === 'SchoolName')?.Value || ''; setSettingsForm({ SchoolLogo: logo, SchoolName: name }); setEditItem({ settings: true }); }
             
-            // เพิ่มเมนู Newsletters (จดหมายข่าว) ใน Admin
             const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Newsletters': 'จดหมายข่าว', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'เนื้อหาหน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
             const getGroupedPages = () => { if (tab !== 'Pages') return null; const groups = {}; data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] }); groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] }; data.Pages.forEach(p => { if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p); else groups['other'].items.push(p); }); return groups; };
 
             const getSortedAdminData = (items) => {
                 if(!items) return [];
                 return [...items].sort((a,b) => {
-                    if(a.Order && b.Order) return Number(a.Order) - Number(b.Order);
+                    // SORT DESCENDING for Admin too (High to Low)
+                    if(a.Order && b.Order) return Number(b.Order) - Number(a.Order);
                     if(a.Order) return -1;
                     if(b.Order) return 1;
                     if(tab === 'News' && a.Date && b.Date) return new Date(b.Date) - new Date(a.Date);
@@ -443,8 +443,9 @@
                                             {tab !== 'Settings' && (
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
-                                                    <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 1, 2, 3 (ว่างไว้ระบบจะจัดเอง)" />
-                                                    <p className="text-xs text-gray-400 mt-1">* ใส่เลขน้อยเพื่อให้อยู่ลำดับแรกๆ</p>
+                                                    <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 10, 9, 8..." />
+                                                    {/* แก้ไขข้อความแนะนำให้ตรงกับ Logic ใหม่ */}
+                                                    <p className="text-xs text-gray-400 mt-1">* ใส่เลขมากเพื่อให้อยู่ลำดับแรกๆ</p>
                                                 </div>
                                             )}
 
@@ -513,7 +514,6 @@
         };
 
         const App = () => {
-            // โหลดสถานะหน้าเว็บล่าสุดจาก sessionStorage (ถ้ามี)
             const [page, setPage] = useState(() => {
                 try {
                     const saved = sessionStorage.getItem('phukham_page_state');
@@ -529,7 +529,6 @@
             const [user, setUser] = useState('');
             const [pass, setPass] = useState('');
 
-            // บันทึกสถานะหน้าเว็บทุกครั้งที่มีการเปลี่ยนหน้า
             useEffect(() => {
                 sessionStorage.setItem('phukham_page_state', JSON.stringify(page));
             }, [page]);
@@ -552,7 +551,6 @@
             
             useEffect(() => { 
                 load();
-                // ตรวจสอบสถานะ Admin จาก sessionStorage (เฉพาะ Tab นี้เท่านั้น)
                 const adminSession = sessionStorage.getItem('phukham_admin_session');
                 if (adminSession === 'true') {
                     setIsAdmin(true);
@@ -565,7 +563,6 @@
                 if(res.success) { 
                     setIsAdmin(true); 
                     setShowLogin(false); 
-                    // บันทึกสถานะ Admin ลง sessionStorage (รีเฟรชอยู่ ปิด Tab หาย)
                     sessionStorage.setItem('phukham_admin_session', 'true');
                 } else { 
                     alert('รหัสผิดพลาด'); 
@@ -585,7 +582,8 @@
             const schoolName = data.Config?.find(c => c.Key === 'SchoolName')?.Value || 'โรงเรียนพุขามครุฑมณีอุทิศ';
 
             const sortedNews = [...data.News].sort((a,b) => {
-                if(a.Order && b.Order) return Number(a.Order) - Number(b.Order);
+                // SORT DESCENDING: b.Order - a.Order (มากไปน้อย)
+                if(a.Order && b.Order) return Number(b.Order) - Number(a.Order);
                 return new Date(b.Date) - new Date(a.Date);
             });
             
