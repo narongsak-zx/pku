@@ -17,14 +17,30 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
         /* BLUE & WHITE THEME */
-        .theme-bg { background-color: #003366; } /* Royal Blue */
-        .theme-text { color: #003366; }
+        .theme-bg { background-color: #003366; } /* Royal Blue Background */
+        .theme-text { color: #003366; } /* Royal Blue Text */
         .theme-border { border-color: #003366; }
         
-        /* Navbar Item */
-        .nav-item { position: relative; color: white; transition: all 0.3s; opacity: 0.9; }
-        .nav-item:hover { opacity: 1; color: #bae6fd; /* Light Blue 200 */ }
-        .nav-item::after { content: ''; position: absolute; width: 0; height: 2px; bottom: -4px; left: 0; background: white; transition: width 0.3s; }
+        /* Navbar Item (White Background Theme) */
+        .nav-item { 
+            position: relative; 
+            color: #003366; /* Default Blue Text */
+            transition: all 0.3s; 
+            font-weight: 600;
+        }
+        .nav-item:hover { 
+            color: #38bdf8; /* Hover Light Blue (Sky-400) */ 
+        }
+        .nav-item::after { 
+            content: ''; 
+            position: absolute; 
+            width: 0; 
+            height: 3px; 
+            bottom: -6px; 
+            left: 0; 
+            background: #38bdf8; /* Hover Line Light Blue */
+            transition: width 0.3s; 
+        }
         .nav-item:hover::after { width: 100%; }
         
         /* Dropdown Style */
@@ -49,7 +65,7 @@
         // ==========================================
         //  วาง URL Apps Script ของคุณตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyxTArXk5TDe9KBIRQDGjHbThoUoqmlli-ntvb-GZiFbld9QwqZW0rpsKxhLz1fwlYTqA/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-wII1DY9iZdGqwO9wXD3dIvXItH_8AVEQN1o-DGYA6NyxeAOzLS3oSheNsaBWVwZt/exec"; 
         
         const { useState, useEffect } = React;
 
@@ -72,30 +88,30 @@
             };
 
             return (
-                <nav className="theme-bg text-white shadow-lg sticky top-0 z-50">
-                    <div className="container mx-auto px-4 h-20 flex justify-between items-center">
+                <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
+                    <div className="container mx-auto px-4 h-24 flex justify-between items-center">
                         {/* Logo Area */}
-                        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setPage({id: 'home'})}>
-                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-12 h-12 object-contain bg-white rounded-full p-1" onError={(e)=>e.target.style.display='none'} />
+                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setPage({id: 'home'})}>
+                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div>
-                                <h1 className="text-lg md:text-xl font-bold leading-none">{schoolName}</h1>
-                                <p className="text-xs text-blue-100 font-medium tracking-wide opacity-80">Phukhamkrutmaneeuthit School</p>
+                                <h1 className="text-xl md:text-2xl font-bold theme-text leading-none">{schoolName}</h1>
+                                <p className="text-sm text-gray-500 font-medium tracking-wide mt-1">Phukhamkrutmaneeuthit School</p>
                             </div>
                         </div>
 
                         {/* Desktop Menu (Horizontal) */}
-                        <div className="hidden lg:flex gap-6 items-center">
+                        <div className="hidden lg:flex gap-8 items-center">
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
-                                    <div key={i} className="relative group h-20 flex items-center cursor-pointer">
-                                        <span onClick={() => m.Type === 'link' && setPage({id: m.ID})} className="nav-item font-medium flex items-center gap-1 text-sm uppercase tracking-wide">
-                                            {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-70"></i>}
+                                    <div key={i} className="relative group h-24 flex items-center cursor-pointer">
+                                        <span onClick={() => m.Type === 'link' && setPage({id: m.ID})} className="nav-item flex items-center gap-1 text-[15px] uppercase tracking-wide">
+                                            {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-50"></i>}
                                         </span>
                                         {m.Type === 'dropdown' && sub.length > 0 && (
-                                            <div className="dropdown-menu absolute top-16 left-0 bg-white text-slate-800 shadow-xl rounded-b-lg w-60 border-t-4 theme-border py-2">
+                                            <div className="dropdown-menu absolute top-20 left-0 bg-white text-slate-800 shadow-xl rounded-b-lg w-64 border-t-4 theme-border py-2">
                                                 {sub.map(s => (
-                                                    <div key={s.id} onClick={() => setPage({id: 'page', key: s.id})} className="px-4 py-2 hover:bg-blue-50 hover:text-blue-800 transition text-sm border-b border-gray-100 last:border-0">
+                                                    <div key={s.id} onClick={() => setPage({id: 'page', key: s.id})} className="px-5 py-3 hover:bg-blue-50 hover:text-blue-600 transition text-sm border-b border-gray-100 last:border-0 font-medium">
                                                         {s.label}
                                                     </div>
                                                 ))}
@@ -106,20 +122,20 @@
                             })}
                         </div>
                         
-                        {/* Mobile Hamburger */}
-                        <button className="lg:hidden text-2xl text-white" onClick={()=>setMobileOpen(!mobileOpen)}><i className="fas fa-bars"></i></button>
+                        {/* Mobile Hamburger (Blue Color) */}
+                        <button className="lg:hidden text-3xl theme-text" onClick={()=>setMobileOpen(!mobileOpen)}><i className="fas fa-bars"></i></button>
                     </div>
 
-                    {/* Mobile Menu Slide */}
+                    {/* Mobile Menu Slide (White Background) */}
                     {mobileOpen && (
-                        <div className="lg:hidden bg-[#002244] text-white border-t border-blue-900 p-4 space-y-2 shadow-lg max-h-[80vh] overflow-y-auto">
+                        <div className="lg:hidden bg-white text-slate-800 border-t border-gray-200 p-4 space-y-2 shadow-lg max-h-[80vh] overflow-y-auto">
                             {sortedMenus.map((m,i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
                                     <div key={i}>
-                                        <div onClick={()=>{ if(m.Type === 'link'){ setPage({id:m.ID}); setMobileOpen(false); } }} className="block py-2 font-bold border-b border-blue-800 hover:text-blue-200">{m.Label}</div>
+                                        <div onClick={()=>{ if(m.Type === 'link'){ setPage({id:m.ID}); setMobileOpen(false); } }} className="block py-3 font-bold theme-text border-b border-gray-100 hover:text-blue-500">{m.Label}</div>
                                         {m.Type === 'dropdown' && sub.map(s => (
-                                            <div key={s.id} onClick={()=>{setPage({id:'page',key:s.id}); setMobileOpen(false);}} className="pl-4 py-2 text-sm text-blue-200 hover:text-white border-l-2 border-blue-500 ml-2">{s.label}</div>
+                                            <div key={s.id} onClick={()=>{setPage({id:'page',key:s.id}); setMobileOpen(false);}} className="pl-6 py-2 text-sm text-gray-600 hover:text-blue-600 border-l-2 border-gray-200 ml-2">{s.label}</div>
                                         ))}
                                     </div>
                                 )
