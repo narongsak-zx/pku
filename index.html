@@ -93,7 +93,7 @@
             display: block; 
             border-radius: 8px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            width: 100%; /* ให้เต็มความกว้าง */
+            width: 100%; 
         }
         .html-content a { color: #004993; text-decoration: underline; font-weight: 600; }
         .html-content ul { list-style-type: disc; margin-left: 2rem; margin-bottom: 1rem; }
@@ -211,7 +211,6 @@
             );
         };
 
-        // --- แก้ไข: ลบ .replace(/\n/g, '<br/>') ออก เพื่อให้ HTML Tag (Iframe) ทำงานถูกต้อง ---
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
                 <div className="content-container py-12 fade-in">
@@ -224,7 +223,6 @@
                                 <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
-                            {/* แก้ไข: ลบ replace เพื่อให้ Embed Code ทำงาน */}
                             <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: item.Content}} />
                         </div>
                     </div>
@@ -321,7 +319,6 @@
                 <div className="fixed inset-0 bg-slate-50 z-[200] flex flex-col text-slate-800 font-sarabun text-base">
                     <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 border-b">
                         <div className="flex items-center gap-2"><div className="bg-primary text-white w-8 h-8 rounded flex items-center justify-center"><i className="fas fa-cog"></i></div><h2 className="font-bold text-lg text-primary">ระบบจัดการหลังบ้าน</h2></div>
-                        {/* เรียกใช้ onLogout เมื่อกดปุ่ม */}
                         <button onClick={onLogout} className="text-red-500 hover:text-red-700 text-sm font-bold"><i className="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
                     </header>
                     <div className="flex flex-1 overflow-hidden">
@@ -438,37 +435,32 @@
                 }
             };
             
-            // --- แก้ไข: เช็ค Session เมื่อเริ่มโหลดหน้าเว็บ ---
+            // ใช้ sessionStorage แทน localStorage ในส่วนของการเช็ค Login
             useEffect(() => { 
                 load();
-                
-                // ตรวจสอบว่ามี Session Admin ค้างอยู่ไหม
-                const adminSession = localStorage.getItem('phukham_admin_session');
+                const adminSession = sessionStorage.getItem('phukham_admin_session');
                 if (adminSession === 'true') {
                     setIsAdmin(true);
                 }
             }, []);
 
-            // --- แก้ไข: Login แล้วบันทึก Session ---
             const handleLogin = async (e) => { 
                 e.preventDefault(); 
                 const res = await api.post({ action: 'login', username: user, password: pass }); 
                 if(res.success) { 
                     setIsAdmin(true); 
                     setShowLogin(false); 
-                    // บันทึก Session ลงเครื่อง
-                    localStorage.setItem('phukham_admin_session', 'true');
+                    // ใช้ sessionStorage เพื่อจำแค่ Tab นี้
+                    sessionStorage.setItem('phukham_admin_session', 'true');
                 } else { 
                     alert('รหัสผิดพลาด'); 
                 } 
             };
 
-            // --- เพิ่ม: ฟังก์ชันออกจากระบบ ---
             const handleLogout = () => {
                 if(confirm('ต้องการออกจากระบบ?')) {
                     setIsAdmin(false);
-                    // ล้าง Session
-                    localStorage.removeItem('phukham_admin_session');
+                    sessionStorage.removeItem('phukham_admin_session');
                 }
             };
 
@@ -509,7 +501,6 @@
                                 {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
                                 {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
                                 {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2>
-                                {/* แก้ไข: ลบ replace เพื่อให้ Embed Code ทำงาน */}
                                 <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content}} />
                                 {p.ImageURL && <img src={getCleanImageUrl(p.ImageURL)} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
                                 {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
