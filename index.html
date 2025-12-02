@@ -17,19 +17,19 @@
         body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
         /* BLUE & WHITE THEME */
-        .theme-bg { background-color: #003366; } /* Royal Blue Background */
-        .theme-text { color: #003366; } /* Royal Blue Text */
+        .theme-bg { background-color: #003366; } /* Royal Blue */
+        .theme-text { color: #003366; }
         .theme-border { border-color: #003366; }
         
-        /* Navbar Item (White Background Theme) */
+        /* Navbar Item */
         .nav-item { 
             position: relative; 
-            color: #003366; /* Default Blue Text */
+            color: #003366; 
             transition: all 0.3s; 
             font-weight: 600;
         }
         .nav-item:hover { 
-            color: #38bdf8; /* Hover Light Blue (Sky-400) */ 
+            color: #004993; /* Sky Blue */ 
         }
         .nav-item::after { 
             content: ''; 
@@ -38,7 +38,7 @@
             height: 3px; 
             bottom: -6px; 
             left: 0; 
-            background: #38bdf8; /* Hover Line Light Blue */
+            background: #004993; 
             transition: width 0.3s; 
         }
         .nav-item:hover::after { width: 100%; }
@@ -91,25 +91,25 @@
                 <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
                     <div className="container mx-auto px-4 h-24 flex justify-between items-center">
                         {/* Logo Area */}
-                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setPage({id: 'home'})}>
-                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
+                        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setPage({id: 'home'})}>
+                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-14 h-14 md:w-16 md:h-16 object-contain bg-white rounded-full p-1" onError={(e)=>e.target.style.display='none'} />
                             <div>
-                                <h1 className="text-xl md:text-2xl font-bold theme-text leading-none">{schoolName}</h1>
-                                <p className="text-sm text-gray-500 font-medium tracking-wide mt-1">Phukhamkrutmaneeuthit School</p>
+                                <h1 className="text-lg md:text-xl lg:text-2xl font-bold theme-text leading-tight">{schoolName}</h1>
+                                <p className="text-xs text-gray-500 font-medium tracking-wide">Phukhamkrutmaneeuthit School</p>
                             </div>
                         </div>
 
-                        {/* Desktop Menu (Horizontal) */}
-                        <div className="hidden lg:flex gap-8 items-center">
+                        {/* Desktop Menu - แก้ไข: เพิ่ม whitespace-nowrap และลด gap */}
+                        <div className="hidden lg:flex gap-4 xl:gap-8 items-center overflow-x-auto">
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
-                                    <div key={i} className="relative group h-24 flex items-center cursor-pointer">
-                                        <span onClick={() => m.Type === 'link' && setPage({id: m.ID})} className="nav-item flex items-center gap-1 text-[15px] uppercase tracking-wide">
+                                    <div key={i} className="relative group h-24 flex items-center cursor-pointer shrink-0">
+                                        <span onClick={() => m.Type === 'link' && setPage({id: m.ID})} className="nav-item flex items-center gap-1 text-[15px] uppercase tracking-wide whitespace-nowrap">
                                             {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-50"></i>}
                                         </span>
                                         {m.Type === 'dropdown' && sub.length > 0 && (
-                                            <div className="dropdown-menu absolute top-20 left-0 bg-white text-slate-800 shadow-xl rounded-b-lg w-64 border-t-4 theme-border py-2">
+                                            <div className="dropdown-menu absolute top-20 left-0 bg-white text-slate-800 shadow-xl rounded-b-lg w-64 border-t-4 theme-border py-2 z-50">
                                                 {sub.map(s => (
                                                     <div key={s.id} onClick={() => setPage({id: 'page', key: s.id})} className="px-5 py-3 hover:bg-blue-50 hover:text-blue-600 transition text-sm border-b border-gray-100 last:border-0 font-medium">
                                                         {s.label}
@@ -122,11 +122,11 @@
                             })}
                         </div>
                         
-                        {/* Mobile Hamburger (Blue Color) */}
+                        {/* Mobile Hamburger */}
                         <button className="lg:hidden text-3xl theme-text" onClick={()=>setMobileOpen(!mobileOpen)}><i className="fas fa-bars"></i></button>
                     </div>
 
-                    {/* Mobile Menu Slide (White Background) */}
+                    {/* Mobile Menu Slide */}
                     {mobileOpen && (
                         <div className="lg:hidden bg-white text-slate-800 border-t border-gray-200 p-4 space-y-2 shadow-lg max-h-[80vh] overflow-y-auto">
                             {sortedMenus.map((m,i) => {
