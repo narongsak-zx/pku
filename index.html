@@ -67,22 +67,49 @@
         }
         .group:hover .nav-link::after { width: 100%; }
 
-        /* DROPDOWN */
+        /* --- MODERN DROPDOWN --- */
         .dropdown-menu {
             position: absolute;
             top: 100%;
             left: 0;
             z-index: 50;
-            background: white;
-            min-width: 240px;
-            border-top: 4px solid #004993;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
-            border-radius: 0 0 10px 10px;
+            background: rgba(255, 255, 255, 0.98); /* เกือบโปร่งแสงนิดๆ */
+            backdrop-filter: blur(10px);
+            min-width: 260px;
+            /* ยกเลิกขอบบนหนาๆ แบบเดิม */
+            border-radius: 16px; /* มุมมน */
+            box-shadow: 0 20px 40px -5px rgba(0, 51, 102, 0.15), 0 8px 16px -8px rgba(0, 0, 0, 0.1); /* เงานุ่มลึก */
+            border: 1px solid rgba(226, 232, 240, 0.8);
             display: none;
-            margin-top: 5px;
+            margin-top: 12px; /* เว้นระยะห่างจาก Navbar ให้ดูเหมือนลอย */
+            padding: 8px; /* เพิ่ม Padding ด้านใน */
+            transform-origin: top left;
         }
-        .group:hover .dropdown-menu { display: block; animation: slideDown 0.2s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* เพิ่มสามเหลี่ยมเล็กๆ ด้านบน (Optional: ถ้าชอบเอา comment ออกได้) */
+        /*
+        .dropdown-menu::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 20px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            transform: rotate(45deg);
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            border-left: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        */
+
+        .group:hover .dropdown-menu { 
+            display: block; 
+            animation: modernSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1); /* Animation แบบเด้งนิดๆ */
+        }
+        
+        @keyframes modernSlideDown { 
+            from { opacity: 0; transform: translateY(10px) scale(0.98); } 
+            to { opacity: 1; transform: translateY(0) scale(1); } 
+        }
 
         /* BANNER SLIDE */
         .slide-image { 
@@ -181,11 +208,22 @@
                                         </span>
                                         {m.Type === 'dropdown' && sub.length > 0 && (
                                             <div className="dropdown-menu">
-                                                {sub.map(s => (
-                                                    <div key={s.id} onClick={() => handleSubMenuClick(s.id)} className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
-                                                        <i className="fas fa-angle-right text-xs mr-2 text-gray-400 group-hover/item:text-[#004993]"></i> {s.label}
-                                                    </div>
-                                                ))}
+                                                {/* ปรับปรุงดีไซน์รายการเมนูย่อย */}
+                                                <div className="flex flex-col gap-1">
+                                                    {sub.map(s => (
+                                                        <div 
+                                                            key={s.id} 
+                                                            onClick={() => handleSubMenuClick(s.id)} 
+                                                            className="px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-[#004993] transition-all duration-200 text-base font-medium whitespace-nowrap cursor-pointer flex items-center group/item text-slate-600 hover:pl-6"
+                                                        >
+                                                            {/* ไอคอนจะเปลี่ยนสีและขยับเมื่อ Hover */}
+                                                            <span className="w-6 flex items-center justify-center mr-1">
+                                                                <i className="fas fa-chevron-right text-[10px] text-gray-300 group-hover/item:text-[#004993] transition-colors"></i>
+                                                            </span>
+                                                            {s.label}
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
