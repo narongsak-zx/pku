@@ -24,21 +24,18 @@
             overflow-x: auto;
         }
         
-        /* ปรับ Container ให้กว้างเกือบเต็มจอ เพื่อให้เมนูมีที่อยู่ และโลโก้ชิดซ้ายมากขึ้น */
         .content-container {
             width: 100%;
-            max-width: 1440px; /* ขยายความกว้างสูงสุดออกไป */
+            max-width: 1440px; 
             margin-left: auto;
             margin-right: auto;
-            padding-left: 2rem; /* ขยับเข้าจากขอบซ้ายนิดหน่อย ไม่ชิดเกินไป */
+            padding-left: 2rem; 
             padding-right: 2rem;
         }
         
         /* THEME COLORS */
         .text-primary { color: #003366; }
-        .text-hover { color: #004993; }
         .bg-primary { background-color: #003366; }
-        .border-primary { border-color: #003366; }
         
         /* NAVBAR */
         .nav-link {
@@ -49,7 +46,7 @@
             cursor: pointer;
             transition: color 0.2s;
             white-space: nowrap;
-            font-size: 15px; /* ปรับขนาดฟอนต์ให้พอดีกับพื้นที่ */
+            font-size: 15px; 
         }
         .nav-link:hover, .group:hover .nav-link { color: #004993; }
         .nav-link::after {
@@ -72,28 +69,16 @@
             display: none;
             margin-top: 5px;
         }
-        .group:hover .dropdown-menu { 
-            display: block; 
-            animation: slideDown 0.2s ease-out;
-        }
-        @keyframes slideDown { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+        .group:hover .dropdown-menu { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* BANNER SLIDE */
-        .slide-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 6s linear, opacity 1s ease-in-out;
-        }
+        .slide-image { width: 100%; height: 100%; object-fit: cover; transition: transform 6s linear, opacity 1s ease-in-out; }
         .slide-active { opacity: 1; transform: scale(1.05); }
         
         /* Animations */
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .float-btn { animation: bounceIn 0.5s; box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4); }
 
         /* HTML Content */
         .html-content iframe { max-width: 100%; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -118,7 +103,6 @@
             post: async (payload) => await (await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })).json()
         };
 
-        // Helper cleaning Google Drive Image URL
         const getCleanImageUrl = (url) => {
             if (!url) return '';
             if (url.includes('drive.google.com') && url.includes('/view')) {
@@ -134,30 +118,13 @@
 
         const Navbar = ({ setPage, logoUrl, schoolName, pages, mainMenus }) => {
             const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => (a.Order||0) - (b.Order||0)) : [];
-            
-            const getSubMenu = (cat) => {
-                return pages
-                    .filter(p => p.MenuCategory === cat)
-                    .sort((a,b) => (a.Order||0) - (b.Order||0))
-                    .map(p => ({id: p.PageKey, label: p.Title}));
-            };
-
-            const handleSubMenuClick = (id) => {
-                setPage({id: 'page', key: id});
-                if (document.activeElement instanceof HTMLElement) {
-                    document.activeElement.blur();
-                }
-            };
-            
-            const handleMenuClick = (id, type) => {
-                if (type === 'link') setPage({id: id});
-            };
+            const getSubMenu = (cat) => pages.filter(p => p.MenuCategory === cat).sort((a,b) => (a.Order||0) - (b.Order||0)).map(p => ({id: p.PageKey, label: p.Title}));
+            const handleSubMenuClick = (id) => { setPage({id: 'page', key: id}); if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
+            const handleMenuClick = (id, type) => { if (type === 'link') setPage({id: id}); };
 
             return (
                 <nav className="w-full bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100 h-24">
                     <div className="content-container h-full flex justify-between items-center">
-                        
-                        {/* Logo Block */}
                         <div className="flex items-center gap-3 cursor-pointer flex-shrink-0" onClick={() => setPage({id: 'home'})}>
                             <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-14 h-14 md:w-16 md:h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
@@ -165,24 +132,18 @@
                                 <p className="text-sm text-gray-500 font-medium tracking-wide mt-1 whitespace-nowrap">Phukhamkrutmaneeuthit School</p>
                             </div>
                         </div>
-
-                        {/* Menu Items Block */}
                         <div className="flex gap-5 lg:gap-6 items-center h-full ml-auto"> 
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
                                     <div key={i} className="relative group h-full flex items-center px-1 cursor-pointer">
-                                        <span onClick={() => handleMenuClick(m.ID, m.Type)} 
-                                              className="nav-link flex items-center gap-1 uppercase tracking-wide">
+                                        <span onClick={() => handleMenuClick(m.ID, m.Type)} className="nav-link flex items-center gap-1 uppercase tracking-wide">
                                             {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-50 ml-1 transition-transform group-hover:rotate-180"></i>}
                                         </span>
-                                        
-                                        {/* Dropdown Menu */}
                                         {m.Type === 'dropdown' && sub.length > 0 && (
                                             <div className="dropdown-menu">
                                                 {sub.map(s => (
-                                                    <div key={s.id} onClick={() => handleSubMenuClick(s.id)} 
-                                                         className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
+                                                    <div key={s.id} onClick={() => handleSubMenuClick(s.id)} className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
                                                         <i className="fas fa-angle-right text-xs mr-2 text-gray-400 group-hover/item:text-[#004993]"></i> {s.label}
                                                     </div>
                                                 ))}
@@ -198,49 +159,27 @@
         };
 
         const Hero = ({ banners, schoolName }) => {
-            const activeBanners = banners 
-                ? banners.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0))
-                : [];
-            const displayBanners = activeBanners.length > 0 
-                ? activeBanners 
-                : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=No+Active+Banner', Caption: 'ยินดีต้อนรับ' }];
-            
+            const activeBanners = banners ? banners.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0)) : [];
+            const displayBanners = activeBanners.length > 0 ? activeBanners : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=No+Active+Banner', Caption: 'ยินดีต้อนรับ' }];
             const [idx, setIdx] = useState(0);
-
-            useEffect(() => {
-                if (displayBanners.length <= 1) return;
-                const interval = setInterval(() => {
-                    setIdx(prev => (prev + 1) % displayBanners.length);
-                }, 5000); 
-                return () => clearInterval(interval);
-            }, [displayBanners.length]);
+            useEffect(() => { if (displayBanners.length <= 1) return; const interval = setInterval(() => setIdx(prev => (prev + 1) % displayBanners.length), 5000); return () => clearInterval(interval); }, [displayBanners.length]);
 
             return (
                 <div className="w-full relative h-[600px] bg-primary group overflow-hidden">
-                    {/* Background Slide */}
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="absolute inset-0 bg-black/30 z-10"></div>
-                            <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} 
-                                onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
+                            <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
                         </div>
                     ))}
-                    
-                    {/* Content Overlay */}
                     <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12">
                         <div className="content-container">
-                            <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight">
-                                {displayBanners[idx].Caption || schoolName}
-                            </h2>
+                            <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight">{displayBanners[idx].Caption || schoolName}</h2>
                         </div>
                     </div>
-
-                    {/* Dots */}
                     {displayBanners.length > 1 && (
                         <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-30">
-                            {displayBanners.map((_, i) => (
-                                <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-8' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>
-                            ))}
+                            {displayBanners.map((_, i) => (<button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-8' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>))}
                         </div>
                     )}
                 </div>
@@ -250,15 +189,9 @@
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
                 <div className="content-container py-12 fade-in">
-                    <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group">
-                        <i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ
-                    </button>
+                    <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group"><i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ</button>
                     <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
-                        {item.ImageURL && (
-                            <div className="w-full h-[500px] bg-gray-50 relative flex justify-center items-center overflow-hidden">
-                                <img src={getCleanImageUrl(item.ImageURL)} className="w-full h-full object-cover" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/800x400?text=No+Image';}} />
-                            </div>
-                        )}
+                        {item.ImageURL && (<div className="w-full h-[500px] bg-gray-50 relative flex justify-center items-center overflow-hidden"><img src={getCleanImageUrl(item.ImageURL)} className="w-full h-full object-cover" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/800x400?text=No+Image';}} /></div>)}
                         <div className="p-12 md:p-16 max-w-5xl mx-auto">
                             <div className="flex flex-wrap items-center gap-4 mb-8">
                                 <span className="bg-blue-50 text-[#004993] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
@@ -276,9 +209,7 @@
             <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition duration-300 transform">
                 <div className="h-64 overflow-hidden relative bg-gray-100">
                      <img src={getCleanImageUrl(n.ImageURL)} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=News';}} />
-                     <div className="absolute top-4 left-4">
-                        <span className="bg-white/95 backdrop-blur text-[#004993] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span>
-                     </div>
+                     <div className="absolute top-4 left-4"><span className="bg-white/95 backdrop-blur text-[#004993] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span></div>
                 </div>
                 <div className="p-8 flex-1 flex flex-col">
                     <div className="text-xs text-gray-400 mb-3 font-medium flex items-center gap-2"><i className="far fa-clock"></i> {new Date(n.Date).toLocaleDateString('th-TH')}</div>
@@ -293,12 +224,52 @@
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
+            
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
             const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก' };
             const getLabel = (key) => labelMap[key] || key;
-            const handleSave = async (e) => { e.preventDefault(); if(!confirm('ยืนยันการบันทึก?')) return; if (tab === 'Settings') { await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo } }); await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolName', Value: settingsForm.SchoolName } }); } else { let payload = { ...form, ID: editItem?.ID || editItem?.PageKey }; await api.post({ action: 'save', sheet: tab, data: payload }); } alert('บันทึกเรียบร้อย'); setEditItem(null); setForm({}); reload(); };
-            const handleDelete = async (id) => { if(confirm('ลบรายการนี้?')) { await api.post({ action: 'delete', sheet: tab, id }); reload(); } };
+
+            const handleAddNew = () => {
+                setEditItem({ _isNew: true });
+                setForm({});
+            };
+
+            const handleEdit = (item) => {
+                setEditItem(item);
+                setForm({ ...item });
+            };
+
+            const handleSave = async (e) => { 
+                e.preventDefault(); 
+                if(!confirm('ยืนยันการบันทึก?')) return; 
+                
+                if (tab === 'Settings') { 
+                    await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo } }); 
+                    await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolName', Value: settingsForm.SchoolName } }); 
+                } else { 
+                    const idToUse = editItem._isNew ? form.ID : (editItem.ID || editItem.PageKey);
+                    let payload = { ...form, ID: idToUse };
+                    if (tab === 'Pages') { payload.PageKey = idToUse; }
+
+                    await api.post({ action: 'save', sheet: tab, data: payload }); 
+                } 
+                alert('บันทึกเรียบร้อย'); 
+                setEditItem(null); 
+                setForm({}); 
+                reload(); 
+            };
+
+            const handleDelete = async (id) => { 
+                if(confirm('ยืนยันการลบรายการนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) { 
+                    await api.post({ action: 'delete', sheet: tab, id }); 
+                    alert('ลบข้อมูลเรียบร้อย');
+                    setEditItem(null); // ปิด Modal ถ้าเปิดอยู่
+                    reload(); 
+                } 
+            };
+            
             const openSettings = () => { const logo = data.Config.find(c => c.Key === 'SchoolLogo')?.Value || ''; const name = data.Config.find(c => c.Key === 'SchoolName')?.Value || ''; setSettingsForm({ SchoolLogo: logo, SchoolName: name }); setEditItem({ settings: true }); }
+            
             const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'เนื้อหาหน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
             const getGroupedPages = () => { if (tab !== 'Pages') return null; const groups = {}; data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] }); groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] }; data.Pages.forEach(p => { if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p); else groups['other'].items.push(p); }); return groups; };
 
@@ -310,14 +281,68 @@
                     </header>
                     <div className="flex flex-1 overflow-hidden">
                         <aside className="w-64 bg-white border-r hidden md:block p-4 space-y-1 overflow-y-auto">
-                            {['News', 'Personnel', 'Banners', 'Pages'].map(t => (<button key={t} onClick={()=>{setTab(t); setEditItem(null);}} className={`w-full text-left px-4 py-3 rounded-lg text-sm transition ${tab===t ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs[t]}</button>))}
-                            <div className="border-t my-2 pt-2"><button onClick={()=>{setTab('Menus'); setEditItem(null);}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Menus' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Menus']}</button><button onClick={()=>{setTab('Settings'); openSettings();}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Settings' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Settings']}</button></div>
+                            {['News', 'Personnel', 'Banners', 'Pages'].map(t => (<button key={t} onClick={()=>{setTab(t); setEditItem(null); setForm({});}} className={`w-full text-left px-4 py-3 rounded-lg text-sm transition ${tab===t ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs[t]}</button>))}
+                            <div className="border-t my-2 pt-2"><button onClick={()=>{setTab('Menus'); setEditItem(null); setForm({});}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Menus' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Menus']}</button><button onClick={()=>{setTab('Settings'); openSettings();}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Settings' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Settings']}</button></div>
                         </aside>
                         <main className="flex-1 p-8 overflow-auto">
                             <h2 className="text-2xl font-bold mb-6 text-primary">{menuTabs[tab]}</h2>
-                            {!['Settings'].includes(tab) && !editItem && (<button onClick={()=>setEditItem({})} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6"><i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่</button>)}
-                            {editItem && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn"><div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-blue-100"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-primary">{tab==='Settings' ? 'ตั้งค่าระบบ' : 'แก้ไขข้อมูล'}</h3><button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button></div><form onSubmit={handleSave} className="grid gap-5">{tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} {tab === 'Menus' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div></>} {tab === 'Pages' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div></>} {Object.keys(form).map(k => { if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null; return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> })}<button className="bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button></form></div></div>)}
-                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">{tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) : (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}</div>
+                            
+                            {!['Settings'].includes(tab) && !editItem && (
+                                <button onClick={handleAddNew} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6">
+                                    <i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่
+                                </button>
+                            )}
+
+                            {editItem && (
+                                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
+                                    <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-blue-100">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="font-bold text-xl text-primary">
+                                                {tab==='Settings' ? 'ตั้งค่าระบบ' : (editItem._isNew ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล')}
+                                            </h3>
+                                            <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
+                                        </div>
+                                        <form onSubmit={handleSave} className="grid gap-5">
+                                            {tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} 
+                                            
+                                            {tab === 'Menus' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label>
+                                                    <input className="w-full border p-3 rounded-lg bg-gray-50 disabled:text-gray-400" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={!editItem._isNew} placeholder="เช่น menu_about (ภาษาอังกฤษเท่านั้น)" />
+                                                </div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div>
+                                            </>} 
+                                            
+                                            {tab === 'Pages' && <>
+                                                {editItem._isNew && <div><label className="text-sm font-bold text-gray-600 mb-1 block">PageKey (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} placeholder="เช่น page_history" /></div>}
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
+                                            </>} 
+                                            
+                                            {/* Generic Fields Generation */}
+                                            {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
+                                                if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
+                                                return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> 
+                                            })}
+                                            
+                                            <div className="flex gap-4">
+                                                <button type="submit" className="flex-1 bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button>
+                                                {!editItem._isNew && tab !== 'Settings' && (
+                                                    <button type="button" onClick={() => handleDelete(editItem.ID || editItem.PageKey)} className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">
+                                                        <i className="fas fa-trash-alt mr-2"></i> ลบข้อมูล
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            )}
+
+                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">
+                                {tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) 
+                                : 
+                                (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}
+                            </div>
                             )}
                         </main>
                     </div>
@@ -376,13 +401,8 @@
                                 <div className="content-container text-center">
                                     <h3 className="font-bold text-xl">{schoolName}</h3>
                                     <p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p>
-                                    
-                                    {/* Link Admin with Lock Icon */}
-                                    <div 
-                                        onClick={() => setShowLogin(true)} 
-                                        className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1"
-                                    >
-                                        <i className="fas fa-lock text-[10px]"></i> admin
+                                    <div onClick={() => setShowLogin(true)} className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1">
+                                        <i className="fas fa-lock text-[10px]"></i> เข้าสู่ระบบผู้ดูแล
                                     </div>
                                 </div>
                             </footer>
