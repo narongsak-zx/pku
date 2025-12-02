@@ -114,8 +114,7 @@
             return url;
         };
 
-        // Helper: ตัด HTML Tag และตัดคำให้สั้นลง (แก้ Default เป็น 10 ตามคำขอ หรือส่งค่าเข้าไป)
-        const getExcerpt = (html, length = 150) => {
+        const getExcerpt = (html, length = 10) => {
             if (!html) return "";
             const tmp = document.createElement("DIV");
             tmp.innerHTML = html;
@@ -126,8 +125,14 @@
         // --- COMPONENTS ---
 
         const Navbar = ({ setPage, logoUrl, schoolName, pages, mainMenus }) => {
-            const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => (a.Order||0) - (b.Order||0)) : [];
-            const getSubMenu = (cat) => pages.filter(p => p.MenuCategory === cat).sort((a,b) => (a.Order||0) - (b.Order||0)).map(p => ({id: p.PageKey, label: p.Title}));
+            // Sorting Menus by Order
+            const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
+            
+            const getSubMenu = (cat) => pages
+                .filter(p => p.MenuCategory === cat)
+                .sort((a,b) => Number(a.Order||0) - Number(b.Order||0))
+                .map(p => ({id: p.PageKey, label: p.Title}));
+                
             const handleSubMenuClick = (id) => { setPage({id: 'page', key: id}); if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); };
             const handleMenuClick = (id, type) => { if (type === 'link') setPage({id: id}); };
 
@@ -168,7 +173,12 @@
         };
 
         const Hero = ({ banners, schoolName }) => {
-            const activeBanners = banners ? banners.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0)) : [];
+            // Sorting Banners by Order
+            const activeBanners = banners ? banners
+                .filter(b => String(b.Active).trim().toUpperCase() === 'TRUE')
+                .sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) 
+                : [];
+            
             const displayBanners = activeBanners.length > 0 ? activeBanners : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=No+Active+Banner', Caption: 'ยินดีต้อนรับ' }];
             const [idx, setIdx] = useState(0);
             useEffect(() => { if (displayBanners.length <= 1) return; const interval = setInterval(() => setIdx(prev => (prev + 1) % displayBanners.length), 5000); return () => clearInterval(interval); }, [displayBanners.length]);
@@ -223,7 +233,6 @@
                 <div className="p-8 flex-1 flex flex-col">
                     <div className="text-xs text-gray-400 mb-3 font-medium flex items-center gap-2"><i className="far fa-clock"></i> {new Date(n.Date).toLocaleDateString('th-TH')}</div>
                     <h3 className="font-bold text-xl mb-3 text-primary line-clamp-2 group-hover:text-[#004993] transition leading-snug">{n.Title}</h3>
-                    {/* ใช้ Helper Function ตัดคำและเอา HTML Tag ออก (แสดงแค่ 10 ตัวอักษร) */}
                     <p className="text-gray-500 text-sm mb-6 flex-1 leading-relaxed">
                         {getExcerpt(n.Content, 10)}
                     </p>
@@ -289,21 +298,23 @@
             const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'เนื้อหาหน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
             const getGroupedPages = () => { if (tab !== 'Pages') return null; const groups = {}; data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] }); groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] }; data.Pages.forEach(p => { if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p); else groups['other'].items.push(p); }); return groups; };
 
-            // Logic การเรียงข้อมูลสำหรับแสดงใน Admin List (Priority: Order -> Date -> ID)
+            // Logic การเรียงข้อมูลสำหรับแสดงใน Admin List
             const getSortedAdminData = (items) => {
                 if(!items) return [];
                 return [...items].sort((a,b) => {
-                    // ถ้ามี Order ทั้งคู่ ให้เรียงตาม Order (น้อย -> มาก)
+                    // ถ้ามี Order ทั้งคู่ ให้เรียงตาม Order (น้อย -> มาก) แปลงเป็น Number เพื่อความชัวร์
                     if(a.Order && b.Order) {
                         return Number(a.Order) - Number(b.Order);
                     }
+                    // ถ้ามี Order แค่ตัวเดียว ให้ตัวที่มี Order ขึ้นก่อน
+                    if(a.Order) return -1;
+                    if(b.Order) return 1;
+
                     // ถ้าเป็น News และไม่มี Order ให้เรียงตาม Date (ใหม่ -> เก่า)
                     if(tab === 'News' && a.Date && b.Date) {
                         return new Date(b.Date) - new Date(a.Date);
                     }
-                    // Default เรียงตาม Order ถ้ามีตัวใดตัวหนึ่ง
-                    if(a.Order) return -1;
-                    if(b.Order) return 1;
+                    
                     return 0;
                 });
             };
@@ -340,11 +351,11 @@
                                         <form onSubmit={handleSave} className="grid gap-5">
                                             {tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} 
                                             
-                                            {/* เพิ่มช่อง Order (ลำดับ) เสมอ สำหรับทุกประเภท (ยกเว้น Settings) */}
                                             {tab !== 'Settings' && (
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
                                                     <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 1, 2, 3 (ว่างไว้ระบบจะจัดเอง)" />
+                                                    <p className="text-xs text-gray-400 mt-1">* ใส่เลขน้อยเพื่อให้อยู่ลำดับแรกๆ</p>
                                                 </div>
                                             )}
 
@@ -373,7 +384,6 @@
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
                                             </>} 
                                             
-                                            {/* Generic Fields */}
                                             {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
                                                 if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
                                                 if(tab === 'News' && k === 'Content') return null;
@@ -428,6 +438,9 @@
                 if(a.Order && b.Order) return Number(a.Order) - Number(b.Order);
                 return new Date(b.Date) - new Date(a.Date);
             });
+            
+            // เรียงลำดับ Personnel หน้าบ้าน
+            const sortedPersonnel = [...data.Personnel].sort((a,b) => Number(a.Order||0) - Number(b.Order||0));
 
             return (
                 <div className="min-h-screen flex flex-col font-sarabun bg-slate-50 relative">
@@ -454,7 +467,7 @@
                                 {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
                                 {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
                                 {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2><div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content.replace(/\n/g, '<br/>')}} />{p.ImageURL && <img src={getCleanImageUrl(p.ImageURL)} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
-                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{data.Personnel.sort((a,b)=>(a.Order||0)-(b.Order||0)).map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
+                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
                                 {page.id === 'contact' && <div className="content-container py-12"><div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"><div className="md:w-1/3 bg-primary p-12 text-white flex flex-col justify-center"><h2 className="text-3xl font-bold mb-8">ติดต่อเรา</h2><ul className="space-y-6 text-white/90 text-lg"><li className="flex items-start gap-4"><i className="fas fa-school mt-1 text-blue-300"></i> <div>{schoolName}</div></li><li className="flex items-center gap-4"><i className="fas fa-phone text-blue-300"></i> โทร: 0xx-xxx-xxxx</li></ul></div><div className="md:w-2/3 h-full"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>}
                             </main>
                             
