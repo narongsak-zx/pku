@@ -377,12 +377,12 @@
                                     <h3 className="font-bold text-xl">{schoolName}</h3>
                                     <p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p>
                                     
-                                    {/* เพิ่มลิงก์เข้าสู่ระบบ Admin ตรงนี้ แทนปุ่มลอย */}
+                                    {/* Link Admin with Lock Icon */}
                                     <div 
                                         onClick={() => setShowLogin(true)} 
-                                        className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-block"
+                                        className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1"
                                     >
-                                        admin
+                                        <i className="fas fa-lock text-[10px]"></i> admin
                                     </div>
                                 </div>
                             </footer>
