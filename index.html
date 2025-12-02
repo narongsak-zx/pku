@@ -13,14 +13,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            /* ป้องกันการเด้ง (Rubber band) เวลาเลื่อนสุดขอบบนหรือล่าง */
+            overscroll-behavior-y: none; 
+            scroll-behavior: smooth;
+        }
+
         body { 
             font-family: 'Sarabun', sans-serif; 
             background-color: #f8fafc; 
             color: #1e293b; 
-            margin: 0; 
-            padding: 0;
             min-width: 1280px; 
-            overflow-x: auto;
+            overflow-x: auto; /* ให้ Scroll แนวนอนได้ถ้าจอเล็กกว่า 1280px */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ให้ Root ขยายเต็มพื้นที่เพื่อให้ Footer ดันลงล่างสุดได้ถูกต้อง */
+        #root {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         .content-container {
@@ -194,7 +210,6 @@
             useEffect(() => { if (displayBanners.length <= 1) return; const interval = setInterval(() => setIdx(prev => (prev + 1) % displayBanners.length), 5000); return () => clearInterval(interval); }, [displayBanners.length]);
 
             return (
-                // UPDATE: Changed fixed height to aspect-ratio 1920/800 and added max-w constraint
                 <div className="w-full max-w-[1920px] mx-auto relative aspect-[1920/800] bg-primary group overflow-hidden">
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
@@ -218,14 +233,12 @@
             );
         };
 
-        // --- COMPONENT: NewsletterSection (Draggable, No Zoom, High-to-Low) ---
         const NewsletterSection = ({ items }) => {
             const scrollRef = useRef(null);
             const [isDragging, setIsDragging] = useState(false);
             const [startX, setStartX] = useState(0);
             const [scrollLeft, setScrollLeft] = useState(0);
             
-            // SORT DESCENDING: b.Order - a.Order
             const activeItems = items ? items.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => Number(b.Order||0) - Number(a.Order||0)) : [];
             
             if (activeItems.length === 0) return null;
@@ -293,10 +306,9 @@
                 </div>
             );
         };
-        // ----------------------------------------
 
         const NewsDetail = ({ item, onBack }) => (
-            <div className="w-full bg-white min-h-screen">
+            <div className="w-full bg-white min-h-[calc(100vh-6rem)]">
                 <div className="content-container py-12 fade-in">
                     <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group"><i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ</button>
                     <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
@@ -359,7 +371,7 @@
 
             const handleAddNew = () => {
                 setEditItem({ _isNew: true });
-                setForm({ Active: 'TRUE' }); // AUTO-SET Active = TRUE
+                setForm({ Active: 'TRUE' }); 
             };
 
             const handleEdit = (item) => {
@@ -478,7 +490,6 @@
                                                 </div>
                                             </>}
 
-                                            {/* เพิ่มส่วนจัดการ Title ของ Newsletters */}
                                             {tab === 'Newsletters' && (
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อจดหมายข่าว</label>
@@ -605,7 +616,7 @@
             const sortedPersonnel = [...data.Personnel].sort((a,b) => Number(a.Order||0) - Number(b.Order||0));
 
             return (
-                <div className="min-h-screen flex flex-col font-sarabun bg-slate-50 relative">
+                <div className="min-h-screen flex flex-col font-sarabun bg-slate-50 relative w-full">
                     {isAdmin ? <AdminPanel data={data} reload={load} onLogout={handleLogout} onClose={()=>handleLogout()} /> : (
                         <>
                             <Navbar setPage={setPage} logoUrl={logoUrl} schoolName={schoolName} pages={data.Pages} mainMenus={data.Menus} />
@@ -614,9 +625,7 @@
                                     <>
                                         <Hero banners={data.Banners} schoolName={schoolName} />
                                         
-                                        {/* --- ใส่ NewsletterSection ตรงนี้ --- */}
                                         <NewsletterSection items={data.Newsletters} />
-                                        {/* ---------------------------------- */}
                                         
                                         <div className="content-container py-16">
                                             <div className="flex items-center justify-between mb-10 border-b border-gray-200 pb-4">
@@ -680,4 +689,5 @@
     </script>
 </body>
 </html>
+
 
