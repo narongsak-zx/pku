@@ -2,48 +2,43 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <!-- บังคับให้แสดงผลแบบ Desktop (กว้าง 1280px) บนทุกอุปกรณ์ -->
-    <meta name="viewport" content="width=1280">
+    <meta name="viewport" content="width=1280"> <!-- บังคับมุมมอง Desktop ตามต้นฉบับ -->
     <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
-    <!-- 1. โหลด Libraries ที่จำเป็น -->
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel สำหรับแปลง JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Font & Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /* CSS Styles */
         body { 
             font-family: 'Sarabun', sans-serif; 
             background-color: #f8fafc; 
             color: #1e293b; 
             margin: 0; 
             padding: 0;
-            min-width: 1280px; /* ป้องกันการบีบหน้าจอ */
-            overflow-x: auto;
+            overflow-x: hidden;
+            min-width: 1280px;
         }
         
+        /* Center Content Container */
         .content-container {
             max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
-            padding-left: 2.5rem; 
-            padding-right: 2.5rem;
+            padding-left: 1.5rem; 
+            padding-right: 1.5rem;
         }
         
-        /* Theme Colors */
+        /* THEME COLORS (White Nav / Blue Text) */
         .text-primary { color: #003366; }
-        .text-hover { color: #004993; }
+        .text-hover { color: #38bdf8; } /* ฟ้าอ่อนตอน Hover */
         .bg-primary { background-color: #003366; }
-        .border-primary { border-color: #003366; }
         
-        /* Navbar */
+        /* NAVBAR ITEM */
         .nav-link {
             position: relative;
             color: #003366;
@@ -52,27 +47,28 @@
             cursor: pointer;
             transition: color 0.2s;
             white-space: nowrap;
+            font-size: 16px;
         }
-        .nav-link:hover, .group:hover .nav-link { color: #004993; }
+        .nav-link:hover, .group:hover .nav-link { color: #38bdf8; }
         .nav-link::after {
             content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 3px;
-            background-color: #004993; transition: width 0.3s;
+            background-color: #38bdf8; transition: width 0.3s;
         }
         .group:hover .nav-link::after { width: 100%; }
 
-        /* Dropdown */
+        /* DROPDOWN */
         .dropdown-menu {
             position: absolute;
             top: 100%;
             left: 0;
             z-index: 50;
             background: white;
-            min-width: 260px;
-            border-top: 4px solid #004993;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
-            border-radius: 0 0 10px 10px;
+            min-width: 240px;
+            border-top: 4px solid #38bdf8;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.15);
+            border-radius: 0 0 8px 8px;
             display: none;
-            margin-top: 5px;
+            margin-top: 0px;
         }
         .group:hover .dropdown-menu { 
             display: block; 
@@ -83,21 +79,14 @@
             to { opacity: 1; transform: translateY(0); } 
         }
 
-        /* Banner */
-        .slide-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 6s linear, opacity 1s ease-in-out;
-        }
-        .slide-active { opacity: 1; transform: scale(1.05); }
-        
-        /* Animations */
+        /* ANIMATIONS */
+        .slide-fade { animation: fadeBanner 1.5s ease-in-out; }
+        @keyframes fadeBanner { from { opacity: 0.4; } to { opacity: 1; } }
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .float-btn { animation: bounceIn 0.5s; box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4); }
 
-        /* HTML Content */
+        /* HTML CONTENT */
         .html-content iframe { max-width: 100%; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .html-content a { color: #004993; text-decoration: underline; font-weight: 600; }
         .html-content ul { list-style-type: disc; margin-left: 2rem; margin-bottom: 1rem; }
@@ -109,38 +98,18 @@
 
     <script type="text/babel">
         // ==========================================
-        //  จุดสำคัญ: ใส่ URL Web App ของคุณตรงนี้
+        //  วาง URL Apps Script ที่นี่
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-pVGPMyJ5Mio99NYfh-GgfeA9QsP8N1_1kdPVIYi2DdYdYXERhPxYIY5K_LhQ4OkJwA/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxI05ITV_1GOsENH98_hneIJss8V9FyBq1EkRZNlmx1ARSt2l9WQAwjDz77VzhKakIK_g/exec"; 
         
         const { useState, useEffect, useRef } = React;
 
-        // --- API SERVICE ---
         const api = {
-            fetchAll: async () => {
-                try {
-                    const res = await fetch(`${APPS_SCRIPT_URL}?action=readAll`);
-                    return await res.json();
-                } catch (e) {
-                    console.error("Error fetching data:", e);
-                    return null;
-                }
-            },
-            post: async (payload) => {
-                try {
-                    const res = await fetch(APPS_SCRIPT_URL, { 
-                        method: 'POST', 
-                        body: JSON.stringify(payload) 
-                    });
-                    return await res.json();
-                } catch (e) {
-                    console.error("Error posting data:", e);
-                    return { success: false };
-                }
-            }
+            fetchAll: async () => await (await fetch(`${APPS_SCRIPT_URL}?action=readAll`)).json(),
+            post: async (payload) => await (await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })).json()
         };
 
-        // Helper cleaning Google Drive Image URL
+        // Helper to clean Google Drive URLs
         const getCleanImageUrl = (url) => {
             if (!url) return '';
             if (url.includes('drive.google.com') && url.includes('/view')) {
@@ -172,23 +141,24 @@
             };
             
             const handleMenuClick = (id, type) => {
-                if (type === 'link') {
-                    setPage({id: id});
-                } 
+                if (type === 'link') setPage({id: id});
             };
 
             return (
-                <nav className="w-full bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100 h-24">
+                <nav className="w-full bg-white shadow-md sticky top-0 z-50 border-b border-gray-100 h-24">
                     <div className="content-container h-full flex justify-between items-center">
+                        
+                        {/* Logo & School Name */}
                         <div className="flex items-center gap-4 cursor-pointer flex-shrink-0 pr-6" onClick={() => setPage({id: 'home'})}>
-                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
+                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain bg-white rounded-full p-1 shadow-sm" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-2xl font-bold text-primary leading-none whitespace-nowrap">{schoolName}</h1>
                                 <p className="text-sm text-gray-500 font-medium tracking-wide mt-1 whitespace-nowrap">Phukhamkrutmaneeuthit School</p>
                             </div>
                         </div>
 
-                        <div className="flex gap-8 items-center h-full ml-12"> 
+                        {/* Desktop Menu Items */}
+                        <div className="flex gap-8 items-center h-full ml-auto"> 
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
@@ -198,11 +168,12 @@
                                             {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-50 ml-1 transition-transform group-hover:rotate-180"></i>}
                                         </span>
                                         
+                                        {/* Dropdown */}
                                         {m.Type === 'dropdown' && sub.length > 0 && (
                                             <div className="dropdown-menu">
                                                 {sub.map(s => (
                                                     <div key={s.id} onClick={() => handleSubMenuClick(s.id)} 
-                                                         className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
+                                                         className="px-6 py-4 hover:bg-blue-50 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
                                                         <i className="fas fa-angle-right text-xs mr-2 text-gray-400 group-hover/item:text-[#004993]"></i> {s.label}
                                                     </div>
                                                 ))}
@@ -221,10 +192,9 @@
             const activeBanners = banners 
                 ? banners.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0))
                 : [];
-                
             const displayBanners = activeBanners.length > 0 
                 ? activeBanners 
-                : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=No+Active+Banner', Caption: 'ยินดีต้อนรับ' }];
+                : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=Welcome', Caption: 'ยินดีต้อนรับ' }];
             
             const [idx, setIdx] = useState(0);
 
@@ -238,6 +208,7 @@
 
             return (
                 <div className="w-full relative h-[600px] bg-primary group overflow-hidden">
+                    {/* Background Slide */}
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="absolute inset-0 bg-black/30 z-10"></div>
@@ -246,18 +217,21 @@
                         </div>
                     ))}
                     
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12">
+                    {/* Content Overlay */}
+                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-16">
                         <div className="content-container">
-                            <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl tracking-tight leading-tight">
+                            <span className="bg-white/20 backdrop-blur-md text-white px-6 py-2 text-sm font-bold rounded-full uppercase tracking-wider mb-4 shadow-xl border border-white/20 inline-block animate-bounce">Welcome</span>
+                            <h2 className="text-5xl md:text-7xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight">
                                 {displayBanners[idx].Caption || schoolName}
                             </h2>
                         </div>
                     </div>
 
+                    {/* Dots */}
                     {displayBanners.length > 1 && (
-                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-30">
+                        <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 z-30">
                             {displayBanners.map((_, i) => (
-                                <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-8' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>
+                                <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-10' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>
                             ))}
                         </div>
                     )}
@@ -268,7 +242,7 @@
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
                 <div className="content-container py-12 fade-in">
-                    <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group">
+                    <button onClick={onBack} className="mb-8 bg-white hover:bg-blue-50 text-[#003366] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group">
                         <i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ
                     </button>
                     <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
@@ -279,7 +253,7 @@
                         )}
                         <div className="p-12 md:p-16 max-w-5xl mx-auto">
                             <div className="flex flex-wrap items-center gap-4 mb-8">
-                                <span className="bg-blue-50 text-[#004993] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
+                                <span className="bg-blue-50 text-[#003366] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
                                 <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
@@ -295,7 +269,7 @@
                 <div className="h-64 overflow-hidden relative bg-gray-100">
                      <img src={getCleanImageUrl(n.ImageURL)} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=News';}} />
                      <div className="absolute top-4 left-4">
-                        <span className="bg-white/95 backdrop-blur text-[#004993] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span>
+                        <span className="bg-white/95 backdrop-blur text-[#003366] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span>
                      </div>
                 </div>
                 <div className="p-8 flex-1 flex flex-col">
@@ -312,10 +286,8 @@
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
-            
             const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก' };
             const getLabel = (key) => labelMap[key] || key;
-            
             const handleSave = async (e) => { e.preventDefault(); if(!confirm('ยืนยันการบันทึก?')) return; if (tab === 'Settings') { await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo } }); await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolName', Value: settingsForm.SchoolName } }); } else { let payload = { ...form, ID: editItem?.ID || editItem?.PageKey }; await api.post({ action: 'save', sheet: tab, data: payload }); } alert('บันทึกเรียบร้อย'); setEditItem(null); setForm({}); reload(); };
             const handleDelete = async (id) => { if(confirm('ลบรายการนี้?')) { await api.post({ action: 'delete', sheet: tab, id }); reload(); } };
             const openSettings = () => { const logo = data.Config.find(c => c.Key === 'SchoolLogo')?.Value || ''; const name = data.Config.find(c => c.Key === 'SchoolName')?.Value || ''; setSettingsForm({ SchoolLogo: logo, SchoolName: name }); setEditItem({ settings: true }); }
@@ -337,7 +309,7 @@
                             <h2 className="text-2xl font-bold mb-6 text-primary">{menuTabs[tab]}</h2>
                             {!['Settings'].includes(tab) && !editItem && (<button onClick={()=>setEditItem({})} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6"><i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่</button>)}
                             {editItem && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn"><div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-blue-100"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-primary">{tab==='Settings' ? 'ตั้งค่าระบบ' : 'แก้ไขข้อมูล'}</h3><button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button></div><form onSubmit={handleSave} className="grid gap-5">{tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} {tab === 'Menus' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div></>} {tab === 'Pages' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div></>} {Object.keys(form).map(k => { if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null; return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> })}<button className="bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button></form></div></div>)}
-                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">{tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) : (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={item.ImageURL} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}</div>
+                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">{tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) : (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}</div>
                             )}
                         </main>
                     </div>
@@ -387,8 +359,8 @@
                                 )}
                                 {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{data.News.sort((a,b)=> new Date(b.Date) - new Date(a.Date)).map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
                                 {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
-                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2><div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content.replace(/\n/g, '<br/>')}} />{p.ImageURL && <img src={getCleanImageUrl(p.ImageURL)} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
-                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{data.Personnel.sort((a,b)=>(a.Order||0)-(b.Order||0)).map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
+                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2><div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content.replace(/\n/g, '<br/>')}} />{p.ImageURL && <img src={p.ImageURL} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
+                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{data.Personnel.sort((a,b)=>(a.Order||0)-(b.Order||0)).map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={p.ImageURL} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
                                 {page.id === 'contact' && <div className="content-container py-12"><div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"><div className="md:w-1/3 bg-primary p-12 text-white flex flex-col justify-center"><h2 className="text-3xl font-bold mb-8">ติดต่อเรา</h2><ul className="space-y-6 text-white/90 text-lg"><li className="flex items-start gap-4"><i className="fas fa-school mt-1 text-blue-300"></i> <div>{schoolName}</div></li><li className="flex items-center gap-4"><i className="fas fa-phone text-blue-300"></i> โทร: 0xx-xxx-xxxx</li></ul></div><div className="md:w-2/3 h-full"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>}
                             </main>
                             <footer className="bg-primary text-white py-12 mt-auto"><div className="content-container text-center"><h3 className="font-bold text-xl">{schoolName}</h3><p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p></div></footer>
