@@ -240,43 +240,6 @@
             </div>
         );
 
-        // --- NEW COMPONENT: IMAGE UPLOADER ---
-        const ImageUploader = ({ onUploadComplete }) => {
-            const [uploading, setUploading] = useState(false);
-            
-            const handleFileChange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.size > 5 * 1024 * 1024) { alert("ไฟล์ขนาดใหญ่เกินไป (จำกัดไม่เกิน 5MB)"); return; }
-
-                setUploading(true);
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = async () => {
-                    const base64Data = reader.result;
-                    try {
-                        const res = await api.post({ action: 'upload', data: base64Data, name: file.name, mimeType: file.type });
-                        if (res.success) { onUploadComplete(res.url); } 
-                        else { alert("อัปโหลดล้มเหลว: " + res.error); }
-                    } catch (err) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); } 
-                    finally { setUploading(false); }
-                };
-            };
-
-            return (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                    <div className="flex items-center gap-3">
-                        <label className="cursor-pointer bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-md text-sm font-bold shadow-sm hover:bg-blue-50 transition flex items-center gap-2">
-                            <i className="fas fa-upload"></i> {uploading ? 'กำลังอัปโหลด...' : 'เลือกรูปภาพ'}
-                            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
-                        </label>
-                        <span className="text-xs text-gray-400">จากเครื่อง (ไม่เกิน 5MB)</span>
-                    </div>
-                    {uploading && <div className="w-full bg-gray-200 rounded-full h-1 mt-2 overflow-hidden"><div className="bg-blue-500 h-1 rounded-full w-2/3 animate-pulse"></div></div>}
-                </div>
-            );
-        };
-
         const AdminPanel = ({ data, reload, onClose }) => {
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
@@ -375,15 +338,7 @@
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {tab === 'Settings' && <>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
-                                                <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label>
-                                                    <input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />
-                                                    <ImageUploader onUploadComplete={(url) => setSettingsForm({...settingsForm, SchoolLogo: url})} />
-                                                    {settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}
-                                                </div>
-                                            </>} 
+                                            {tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} 
                                             
                                             {tab !== 'Settings' && (
                                                 <div>
@@ -421,27 +376,7 @@
                                             {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
                                                 if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
                                                 if(tab === 'News' && k === 'Content') return null;
-                                                
-                                                const isImage = k === 'ImageURL';
-                                                
-                                                return (
-                                                    <div key={k}>
-                                                        <label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>
-                                                        {k === 'Content' ? (
-                                                            <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div>
-                                                        ) : (
-                                                            <>
-                                                                <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />
-                                                                {isImage && (
-                                                                    <>
-                                                                        <ImageUploader onUploadComplete={(url) => setForm({...form, [k]: url})} />
-                                                                        {form[k] && <div className="mt-2"><img src={form[k]} className="h-20 rounded border bg-gray-50 object-contain" onError={(e)=>e.target.style.display='none'} /></div>}
-                                                                    </>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div> 
-                                                )
+                                                return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> 
                                             })}
                                             
                                             <div className="flex gap-4">
@@ -547,4 +482,5 @@
     </script>
 </body>
 </html>
+
 
