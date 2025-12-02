@@ -70,34 +70,41 @@
         .group:hover .dropdown-menu { display: block; animation: slideDown 0.2s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* BANNER SLIDE - แก้ไขตรงนี้ (ปิด Zoom) */
+        /* BANNER SLIDE */
         .slide-image { 
             width: 100%; 
             height: 100%; 
             object-fit: cover; 
-            transition: opacity 1s ease-in-out; /* เอา transform ออก */
+            transition: opacity 1s ease-in-out; 
         }
         .slide-active { 
             opacity: 1; 
-            /* เอา transform: scale(1.05) ออก */
         }
         
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .html-content iframe { max-width: 100%; margin: 20px auto; display: block; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* HTML Content Fixes */
+        .html-content { word-wrap: break-word; }
+        /* รองรับ iframe ให้ Responsive */
+        .html-content iframe { 
+            max-width: 100%; 
+            margin: 20px auto; 
+            display: block; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            width: 100%; /* ให้เต็มความกว้าง */
+        }
         .html-content a { color: #004993; text-decoration: underline; font-weight: 600; }
         .html-content ul { list-style-type: disc; margin-left: 2rem; margin-bottom: 1rem; }
         .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; }
+        .html-content p { margin-bottom: 1rem; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // ==========================================
-        //  วาง URL Apps Script ตรงนี้
-        // ==========================================
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzjeTmMN3Bv1NhgsquqfoHi8eEhRmCAbIaNQ9FzD1D6ehmsueqPVaJGkc_5nX5TSWkXA/exec"; 
         
         const { useState, useEffect, useRef } = React;
@@ -188,7 +195,6 @@
                             <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
                         </div>
                     ))}
-                    {/* แก้ไขเงื่อนไขแสดง Caption: ถ้าไม่มี Caption ไม่ต้องแสดงอะไรเลย */}
                     {displayBanners[idx].Caption && (
                         <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12">
                             <div className="content-container">
@@ -205,7 +211,7 @@
             );
         };
 
-        // ... NewsDetail, NewsCard components are same as before ...
+        // --- แก้ไข: ลบ .replace(/\n/g, '<br/>') ออก เพื่อให้ HTML Tag (Iframe) ทำงานถูกต้อง ---
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-screen">
                 <div className="content-container py-12 fade-in">
@@ -218,7 +224,8 @@
                                 <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
-                            <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: item.Content.replace(/\n/g, '<br/>')}} />
+                            {/* แก้ไข: ลบ replace เพื่อให้ Embed Code ทำงาน */}
+                            <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: item.Content}} />
                         </div>
                     </div>
                 </div>
@@ -242,7 +249,7 @@
             </div>
         );
 
-        const AdminPanel = ({ data, reload, onClose }) => {
+        const AdminPanel = ({ data, reload, onLogout }) => {
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
@@ -314,7 +321,8 @@
                 <div className="fixed inset-0 bg-slate-50 z-[200] flex flex-col text-slate-800 font-sarabun text-base">
                     <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 border-b">
                         <div className="flex items-center gap-2"><div className="bg-primary text-white w-8 h-8 rounded flex items-center justify-center"><i className="fas fa-cog"></i></div><h2 className="font-bold text-lg text-primary">ระบบจัดการหลังบ้าน</h2></div>
-                        <button onClick={onClose} className="text-red-500 hover:text-red-700 text-sm font-bold"><i className="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
+                        {/* เรียกใช้ onLogout เมื่อกดปุ่ม */}
+                        <button onClick={onLogout} className="text-red-500 hover:text-red-700 text-sm font-bold"><i className="fas fa-sign-out-alt"></i> ออกจากระบบ</button>
                     </header>
                     <div className="flex flex-1 overflow-hidden">
                         <aside className="w-64 bg-white border-r hidden md:block p-4 space-y-1 overflow-y-auto">
@@ -414,19 +422,15 @@
             const [user, setUser] = useState('');
             const [pass, setPass] = useState('');
 
-            // --- แก้ไขการโหลดข้อมูล: ใช้ Cache และดึงข้อมูลใหม่ใน Background ---
             const load = async () => {
-                // 1. ลองดึงจาก Cache มาแสดงก่อน (ถ้ามี) -> เร็วมาก
                 const cached = localStorage.getItem('phukhamData');
                 if (cached) {
                     try { setData(JSON.parse(cached)); } catch(e) { console.error("Cache error"); }
                 }
 
-                // 2. ดึงข้อมูลจริงจาก Server
                 try {
                     const freshData = await api.fetchAll();
                     setData(freshData);
-                    // อัปเดต Cache
                     localStorage.setItem('phukhamData', JSON.stringify(freshData));
                 } catch (err) {
                     console.error("Failed to load data", err);
@@ -434,27 +438,55 @@
                 }
             };
             
-            useEffect(() => { load(); }, []);
+            // --- แก้ไข: เช็ค Session เมื่อเริ่มโหลดหน้าเว็บ ---
+            useEffect(() => { 
+                load();
+                
+                // ตรวจสอบว่ามี Session Admin ค้างอยู่ไหม
+                const adminSession = localStorage.getItem('phukham_admin_session');
+                if (adminSession === 'true') {
+                    setIsAdmin(true);
+                }
+            }, []);
 
-            const handleLogin = async (e) => { e.preventDefault(); const res = await api.post({ action: 'login', username: user, password: pass }); if(res.success) { setIsAdmin(true); setShowLogin(false); } else { alert('รหัสผิดพลาด'); } };
+            // --- แก้ไข: Login แล้วบันทึก Session ---
+            const handleLogin = async (e) => { 
+                e.preventDefault(); 
+                const res = await api.post({ action: 'login', username: user, password: pass }); 
+                if(res.success) { 
+                    setIsAdmin(true); 
+                    setShowLogin(false); 
+                    // บันทึก Session ลงเครื่อง
+                    localStorage.setItem('phukham_admin_session', 'true');
+                } else { 
+                    alert('รหัสผิดพลาด'); 
+                } 
+            };
+
+            // --- เพิ่ม: ฟังก์ชันออกจากระบบ ---
+            const handleLogout = () => {
+                if(confirm('ต้องการออกจากระบบ?')) {
+                    setIsAdmin(false);
+                    // ล้าง Session
+                    localStorage.removeItem('phukham_admin_session');
+                }
+            };
 
             if(!data) return <div className="h-screen flex items-center justify-center bg-slate-50 flex-col gap-4"><div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><p className="text-slate-400 font-sarabun animate-pulse">กำลังโหลดข้อมูล...</p></div>;
 
             const logoUrl = data.Config?.find(c => c.Key === 'SchoolLogo')?.Value || '';
             const schoolName = data.Config?.find(c => c.Key === 'SchoolName')?.Value || 'โรงเรียนพุขามครุฑมณีอุทิศ';
 
-            // เรียงลำดับ News หน้าบ้าน (Order ก่อน ถ้าไม่มีให้เรียง Date ใหม่->เก่า)
             const sortedNews = [...data.News].sort((a,b) => {
                 if(a.Order && b.Order) return Number(a.Order) - Number(b.Order);
                 return new Date(b.Date) - new Date(a.Date);
             });
             
-            // เรียงลำดับ Personnel หน้าบ้าน
             const sortedPersonnel = [...data.Personnel].sort((a,b) => Number(a.Order||0) - Number(b.Order||0));
 
             return (
                 <div className="min-h-screen flex flex-col font-sarabun bg-slate-50 relative">
-                    {isAdmin ? <AdminPanel data={data} reload={load} onClose={()=>setIsAdmin(false)} /> : (
+                    {isAdmin ? <AdminPanel data={data} reload={load} onLogout={handleLogout} onClose={()=>handleLogout()} /> : (
                         <>
                             <Navbar setPage={setPage} logoUrl={logoUrl} schoolName={schoolName} pages={data.Pages} mainMenus={data.Menus} />
                             <main className="flex-grow w-full bg-white">
@@ -476,7 +508,10 @@
                                 )}
                                 {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
                                 {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
-                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2><div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content.replace(/\n/g, '<br/>')}} />{p.ImageURL && <img src={getCleanImageUrl(p.ImageURL)} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
+                                {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; return <><h2 className="text-4xl font-bold text-primary mb-8 pb-4 border-b border-gray-200">{p.Title}</h2>
+                                {/* แก้ไข: ลบ replace เพื่อให้ Embed Code ทำงาน */}
+                                <div className="prose prose-lg max-w-none text-slate-700 leading-relaxed html-content" dangerouslySetInnerHTML={{__html: p.Content}} />
+                                {p.ImageURL && <img src={getCleanImageUrl(p.ImageURL)} className="mt-10 rounded-xl shadow-lg w-full max-h-[500px] object-cover" />}</> })()}</div></div>}
                                 {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
                                 {page.id === 'contact' && <div className="content-container py-12"><div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]"><div className="md:w-1/3 bg-primary p-12 text-white flex flex-col justify-center"><h2 className="text-3xl font-bold mb-8">ติดต่อเรา</h2><ul className="space-y-6 text-white/90 text-lg"><li className="flex items-start gap-4"><i className="fas fa-school mt-1 text-blue-300"></i> <div>{schoolName}</div></li><li className="flex items-center gap-4"><i className="fas fa-phone text-blue-300"></i> โทร: 0xx-xxx-xxxx</li></ul></div><div className="md:w-2/3 h-full"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>}
                             </main>
@@ -486,7 +521,7 @@
                                     <h3 className="font-bold text-xl">{schoolName}</h3>
                                     <p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p>
                                     <div onClick={() => setShowLogin(true)} className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1">
-                                        <i className="fas fa-lock text-[10px]"></i> admin
+                                        <i className="fas fa-lock text-[10px]"></i> เข้าสู่ระบบผู้ดูแล
                                     </div>
                                 </div>
                             </footer>
