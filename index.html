@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280"> <!-- บังคับ Desktop View -->
+    <meta name="viewport" content="width=1280"> <!-- ยังคงบังคับมุมมอง Desktop ตามที่เคยขอ -->
     <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
     <!-- Libraries -->
@@ -23,7 +23,7 @@
             overflow-x: hidden; /* ป้องกันสกรอลแนวนอนส่วนเกิน */
         }
         
-        /* Utility Class สำหรับจัดเนื้อหาให้อยู่ตรงกลาง (Content is centered, BG is full width) */
+        /* Utility Class สำหรับจัดเนื้อหาให้อยู่ตรงกลาง */
         .content-container {
             max-width: 1200px;
             margin-left: auto;
@@ -32,7 +32,7 @@
             padding-right: 1rem;
         }
         
-        /* THEME COLORS (Blue/White) */
+        /* THEME COLORS */
         .text-primary { color: #003366; }
         .text-hover { color: #004993; }
         .bg-primary { background-color: #003366; }
@@ -55,7 +55,7 @@
         }
         .group:hover .nav-link::after { width: 100%; }
 
-        /* DROPDOWN (Modern UI, Fixed on click/hover) */
+        /* DROPDOWN (Modernized UI and Spacing) */
         .dropdown-menu {
             position: absolute;
             top: 100%;
@@ -64,8 +64,8 @@
             background: white;
             min-width: 260px;
             border-top: 4px solid #004993;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2); 
-            border-radius: 0 0 10px 10px; 
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25); /* เงาเข้มขึ้น */
+            border-radius: 0 0 10px 10px; /* โค้งมนมากขึ้น */
             display: none;
             margin-top: 5px; /* ขยับลงมาให้ดูดี */
         }
@@ -127,10 +127,10 @@
                     .map(p => ({id: p.PageKey, label: p.Title}));
             };
 
-            // ฟังก์ชันกดเมนูย่อยแล้วปิด Dropdown ทันที 
+            // ฟังก์ชันกดเมนูย่อยแล้วปิด Dropdown ทันที (โดยการลบ focus)
             const handleSubMenuClick = (id) => {
                 setPage({id: 'page', key: id});
-                // Trick: ลบ focus/hover state ออกทันที
+                // Trick: คลิกที่ body เพื่อให้ hover state หลุด
                 if (document.activeElement instanceof HTMLElement) {
                     document.activeElement.blur();
                 }
@@ -140,7 +140,7 @@
                 <nav className="w-full bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100 h-24">
                     <div className="content-container h-full flex justify-between items-center">
                         
-                        {/* Logo */}
+                        {/* Logo and Name Block (Fixed Left) */}
                         <div className="flex items-center gap-4 cursor-pointer flex-shrink-0" onClick={() => setPage({id: 'home'})}>
                             <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
@@ -149,8 +149,9 @@
                             </div>
                         </div>
 
-                        {/* Menu Items */}
-                        <div className="flex gap-8 items-center h-full"> 
+                        {/* Menu Items Block (Pushed Right) */}
+                        {/* Adjusted gap from 8 to 6 and added margin-left to push away from logo area for better balance */}
+                        <div className="flex gap-6 items-center h-full ml-12"> 
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
@@ -165,8 +166,8 @@
                                             <div className="dropdown-menu">
                                                 {sub.map(s => (
                                                     <div key={s.id} onClick={() => handleSubMenuClick(s.id)} 
-                                                         className="px-5 py-3 hover:bg-blue-50 hover:text-[#004993] transition text-sm border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
-                                                        <i className="fas fa-angle-right text-xs mr-2 text-gray-300 group-hover/item:text-[#004993]"></i> {s.label}
+                                                         className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
+                                                        <i className="fas fa-angle-right text-xs mr-2 text-gray-400 group-hover/item:text-[#004993]"></i> {s.label}
                                                     </div>
                                                 ))}
                                             </div>
@@ -268,7 +269,6 @@
         );
 
         const AdminPanel = ({ data, reload, onClose }) => {
-            // ... (Admin Code - เหมือนเดิม)
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
