@@ -17,7 +17,6 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            /* ป้องกันการเด้ง (Rubber band) เวลาเลื่อนสุดขอบบนหรือล่าง */
             overscroll-behavior-y: none; 
             scroll-behavior: smooth;
         }
@@ -27,12 +26,11 @@
             background-color: #f8fafc; 
             color: #1e293b; 
             min-width: 1280px; 
-            overflow-x: auto; /* ให้ Scroll แนวนอนได้ถ้าจอเล็กกว่า 1280px */
+            overflow-x: auto;
             display: flex;
             flex-direction: column;
         }
 
-        /* ให้ Root ขยายเต็มพื้นที่เพื่อให้ Footer ดันลงล่างสุดได้ถูกต้อง */
         #root {
             min-height: 100vh;
             display: flex;
@@ -239,6 +237,7 @@
             const [startX, setStartX] = useState(0);
             const [scrollLeft, setScrollLeft] = useState(0);
             
+            // FRONTEND: High to Low (Desc)
             const activeItems = items ? items.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => Number(b.Order||0) - Number(a.Order||0)) : [];
             
             if (activeItems.length === 0) return null;
@@ -420,13 +419,28 @@
             const getSortedAdminData = (items) => {
                 if(!items) return [];
                 return [...items].sort((a,b) => {
-                    if(a.Order && b.Order) return Number(b.Order) - Number(a.Order);
-                    if(a.Order) return -1;
-                    if(b.Order) return 1;
-                    if(tab === 'News' && a.Date && b.Date) return new Date(b.Date) - new Date(a.Date);
-                    return 0;
+                    const orderA = Number(a.Order) || 0;
+                    const orderB = Number(b.Order) || 0;
+
+                    if (tab === 'News' || tab === 'Newsletters') {
+                        // High to Low (Desc)
+                        if(orderA !== orderB) return orderB - orderA;
+                        if(tab === 'News' && a.Date && b.Date) return new Date(b.Date) - new Date(a.Date);
+                        return 0;
+                    } else {
+                        // Low to High (Asc) - Default for others
+                        return orderA - orderB;
+                    }
                 });
             };
+
+            const isDescendingTab = ['News', 'Newsletters'].includes(tab);
+
+            const getSortingMessage = (t) => {
+                if (['News', 'Newsletters'].includes(t)) return 'เรียงจาก มาก -> น้อย (เลขมากหรือล่าสุด ขึ้นก่อน)';
+                if (['Banners', 'Personnel', 'Menus', 'Pages'].includes(t)) return 'เรียงจาก น้อย -> มาก (เลข 1, 2, 3... ตามลำดับ)';
+                return '';
+            }
 
             return (
                 <div className="fixed inset-0 bg-slate-50 z-[200] flex flex-col text-slate-800 font-sarabun text-base">
@@ -440,8 +454,18 @@
                             <div className="border-t my-2 pt-2"><button onClick={()=>{setTab('Menus'); setEditItem(null); setForm({});}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Menus' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Menus']}</button><button onClick={()=>{setTab('Settings'); openSettings();}} className={`w-full text-left px-4 py-2 rounded-lg text-sm transition ${tab==='Settings' ? 'bg-primary text-white font-bold' : 'text-gray-600 hover:bg-gray-50'}`}>{menuTabs['Settings']}</button></div>
                         </aside>
                         <main className="flex-1 p-8 overflow-auto">
-                            <h2 className="text-2xl font-bold mb-6 text-primary">{menuTabs[tab]}</h2>
+                            <h2 className="text-2xl font-bold mb-4 text-primary">{menuTabs[tab]}</h2>
                             
+                            {/* INFO BOX FOR SORTING */}
+                            {tab !== 'Settings' && (
+                                <div className="bg-blue-50 text-[#003366] p-3 rounded-lg mb-6 text-sm flex items-start gap-2 border border-blue-100 shadow-sm">
+                                    <i className="fas fa-sort-amount-down mt-1"></i>
+                                    <div>
+                                        <span className="font-bold">การเรียงลำดับ:</span> {getSortingMessage(tab)}
+                                    </div>
+                                </div>
+                            )}
+
                             {!['Settings'].includes(tab) && !editItem && (
                                 <button onClick={handleAddNew} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6">
                                     <i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่
@@ -467,7 +491,14 @@
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
                                                     <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 10, 9, 8..." />
-                                                    <p className="text-xs text-gray-400 mt-1">* ใส่เลขมากเพื่อให้อยู่ลำดับแรกๆ</p>
+                                                    {/* DYNAMIC HINT */}
+                                                    <p className="text-sm text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded border border-blue-100 flex items-center gap-2">
+                                                        <i className="fas fa-info-circle"></i> 
+                                                        {isDescendingTab 
+                                                            ? "ใส่ตัวเลขมาก = แสดงก่อน (เรียงจาก มาก -> น้อย)" 
+                                                            : "ใส่ตัวเลขน้อย = แสดงก่อน (เรียงจาก น้อย -> มาก, เช่น 1, 2, 3...)"
+                                                        }
+                                                    </p>
                                                 </div>
                                             )}
 
