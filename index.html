@@ -217,7 +217,7 @@
             );
         };
 
-        // --- COMPONENT: NewsletterSection (Sorted High-to-Low) ---
+        // --- COMPONENT: NewsletterSection (Draggable, No Zoom, High-to-Low) ---
         const NewsletterSection = ({ items }) => {
             const scrollRef = useRef(null);
             const [isDragging, setIsDragging] = useState(false);
@@ -276,7 +276,7 @@
                                     <div className="relative overflow-hidden aspect-[1414/2000]">
                                         <img 
                                             src={getCleanImageUrl(item.ImageURL)} 
-                                            className="w-full h-full object-cover pointer-events-none group-hover:scale-105 transition duration-500" 
+                                            className="w-full h-full object-cover pointer-events-none transition duration-500" 
                                             onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1414x2000?text=Newsletter';}} 
                                         />
                                     </div>
@@ -350,7 +350,7 @@
 
             const handleAddNew = () => {
                 setEditItem({ _isNew: true });
-                setForm({});
+                setForm({ Active: 'TRUE' }); // AUTO-SET Active = TRUE
             };
 
             const handleEdit = (item) => {
@@ -399,7 +399,6 @@
             const getSortedAdminData = (items) => {
                 if(!items) return [];
                 return [...items].sort((a,b) => {
-                    // SORT DESCENDING for Admin too (High to Low)
                     if(a.Order && b.Order) return Number(b.Order) - Number(a.Order);
                     if(a.Order) return -1;
                     if(b.Order) return 1;
@@ -444,7 +443,6 @@
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
                                                     <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 10, 9, 8..." />
-                                                    {/* แก้ไขข้อความแนะนำให้ตรงกับ Logic ใหม่ */}
                                                     <p className="text-xs text-gray-400 mt-1">* ใส่เลขมากเพื่อให้อยู่ลำดับแรกๆ</p>
                                                 </div>
                                             )}
@@ -582,7 +580,6 @@
             const schoolName = data.Config?.find(c => c.Key === 'SchoolName')?.Value || 'โรงเรียนพุขามครุฑมณีอุทิศ';
 
             const sortedNews = [...data.News].sort((a,b) => {
-                // SORT DESCENDING: b.Order - a.Order (มากไปน้อย)
                 if(a.Order && b.Order) return Number(b.Order) - Number(a.Order);
                 return new Date(b.Date) - new Date(a.Date);
             });
