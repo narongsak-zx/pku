@@ -2,8 +2,10 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280"> <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
+    <meta name="viewport" content="width=1280"> <!-- บังคับ Desktop View -->
+    <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
+    <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -65,20 +67,8 @@
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
             border-radius: 0 0 10px 10px;
             display: none;
-            margin-top: 15px; /* เพิ่มระยะห่างไม่ให้ชิดเมนูหลักเกินไป */
-            padding-top: 5px;
+            margin-top: 5px;
         }
-        /* เทคนิค Invisible bridge เพื่อไม่ให้เมาส์หลุดตอนเลื่อนลง */
-        .dropdown-menu::before {
-            content: "";
-            position: absolute;
-            top: -15px;
-            left: 0;
-            width: 100%;
-            height: 15px;
-            background: transparent;
-        }
-
         .group:hover .dropdown-menu { display: block; animation: slideDown 0.2s ease-out; }
         @keyframes slideDown { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -102,9 +92,9 @@
 
     <script type="text/babel">
         // ==========================================
-        //  วาง URL Apps Script ตรงนี้ (ตรวจสอบ URL ให้ถูกต้อง)
+        //  วาง URL Apps Script ตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyItCJAPjn9t1Die21Otxd67_0JngeM8s4j-yCqfDj8fSIoso6EpgG2v421M3nKYFWPww/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzzjeTmMN3Bv1NhgsquqfoHi8eEhRmCAbIaNQ9FzD1D6ehmsueqPVaJGkc_5nX5TSWkXA/exec"; 
         
         const { useState, useEffect, useRef } = React;
 
@@ -115,7 +105,6 @@
 
         const getCleanImageUrl = (url) => {
             if (!url) return '';
-            // แปลงลิงก์ Drive ทั่วไปให้เป็น Direct Link
             if (url.includes('drive.google.com') && url.includes('/view')) {
                 return url.replace('/view', '/preview').replace('file/d/', 'uc?id=').replace('/preview', '');
             }
@@ -133,20 +122,12 @@
             return text.length > length ? text.substring(0, length) + "..." : text;
         };
 
-        // ฟังก์ชันช่วยแปลงไฟล์เป็น Base64
-        const fileToBase64 = (file) => {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        };
-
         // --- COMPONENTS ---
 
         const Navbar = ({ setPage, logoUrl, schoolName, pages, mainMenus }) => {
+            // Sorting Menus by Order
             const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
+            
             const getSubMenu = (cat) => pages
                 .filter(p => p.MenuCategory === cat)
                 .sort((a,b) => Number(a.Order||0) - Number(b.Order||0))
@@ -176,7 +157,7 @@
                                         {m.Type === 'dropdown' && sub.length > 0 && (
                                             <div className="dropdown-menu">
                                                 {sub.map(s => (
-                                                    <div key={s.id} onClick={() => handleSubMenuClick(s.id)} className="px-6 py-4 hover:bg-blue-50 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
+                                                    <div key={s.id} onClick={() => handleSubMenuClick(s.id)} className="px-6 py-4 hover:bg-blue-100 hover:text-[#004993] transition text-base border-b border-gray-100 last:border-0 font-medium whitespace-nowrap cursor-pointer flex items-center group/item">
                                                         <i className="fas fa-angle-right text-xs mr-2 text-gray-400 group-hover/item:text-[#004993]"></i> {s.label}
                                                     </div>
                                                 ))}
@@ -259,12 +240,47 @@
             </div>
         );
 
+        // --- NEW COMPONENT: IMAGE UPLOADER ---
+        const ImageUploader = ({ onUploadComplete }) => {
+            const [uploading, setUploading] = useState(false);
+            
+            const handleFileChange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 5 * 1024 * 1024) { alert("ไฟล์ขนาดใหญ่เกินไป (จำกัดไม่เกิน 5MB)"); return; }
+
+                setUploading(true);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const base64Data = reader.result;
+                    try {
+                        const res = await api.post({ action: 'upload', data: base64Data, name: file.name, mimeType: file.type });
+                        if (res.success) { onUploadComplete(res.url); } 
+                        else { alert("อัปโหลดล้มเหลว: " + res.error); }
+                    } catch (err) { alert("เกิดข้อผิดพลาดในการเชื่อมต่อ"); } 
+                    finally { setUploading(false); }
+                };
+            };
+
+            return (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                    <div className="flex items-center gap-3">
+                        <label className="cursor-pointer bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-md text-sm font-bold shadow-sm hover:bg-blue-50 transition flex items-center gap-2">
+                            <i className="fas fa-upload"></i> {uploading ? 'กำลังอัปโหลด...' : 'เลือกรูปภาพ'}
+                            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
+                        </label>
+                        <span className="text-xs text-gray-400">จากเครื่อง (ไม่เกิน 5MB)</span>
+                    </div>
+                    {uploading && <div className="w-full bg-gray-200 rounded-full h-1 mt-2 overflow-hidden"><div className="bg-blue-500 h-1 rounded-full w-2/3 animate-pulse"></div></div>}
+                </div>
+            );
+        };
+
         const AdminPanel = ({ data, reload, onClose }) => {
             const [tab, setTab] = useState('News');
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
-            const [uploadFile, setUploadFile] = useState(null); // เก็บไฟล์ที่เลือก
-            const [isUploading, setIsUploading] = useState(false); // สถานะการโหลด
             
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
             const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล (เลขน้อยขึ้นก่อน)' };
@@ -273,79 +289,34 @@
             const handleAddNew = () => {
                 setEditItem({ _isNew: true });
                 setForm({});
-                setUploadFile(null);
             };
 
             const handleEdit = (item) => {
                 setEditItem(item);
                 setForm({ ...item });
-                setUploadFile(null);
-            };
-
-            const handleFileChange = (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0];
-                    if (file.size > 4 * 1024 * 1024) {
-                        alert('ไฟล์มีขนาดใหญ่เกินไป (ต้องไม่เกิน 4MB)');
-                        e.target.value = '';
-                        return;
-                    }
-                    setUploadFile(file);
-                }
             };
 
             const handleSave = async (e) => { 
                 e.preventDefault(); 
                 if(!confirm('ยืนยันการบันทึก?')) return; 
                 
-                // --- ส่วนจัดการอัปโหลดรูปภาพ ---
-                let finalImageUrl = form.ImageURL;
-                if (uploadFile) {
-                    setIsUploading(true);
-                    try {
-                        const base64 = await fileToBase64(uploadFile);
-                        const uploadRes = await api.post({ 
-                            action: 'upload', 
-                            fileData: base64, 
-                            fileName: uploadFile.name 
-                        });
-                        
-                        if (uploadRes.success) {
-                            finalImageUrl = uploadRes.url;
-                            // อัปเดตใน form ด้วยเพื่อให้แสดงผลถูกต้องทันที
-                            setForm(prev => ({ ...prev, ImageURL: finalImageUrl }));
-                        } else {
-                            alert('อัปโหลดรูปไม่สำเร็จ: ' + uploadRes.error);
-                            setIsUploading(false);
-                            return; // หยุดการทำงานถ้าอัปโหลดไม่ผ่าน
-                        }
-                    } catch (err) {
-                        alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + err);
-                        setIsUploading(false);
-                        return;
-                    }
-                    setIsUploading(false);
-                }
-                // -----------------------------
-
                 if (tab === 'Settings') { 
                     await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo } }); 
                     await api.post({ action: 'save', sheet: 'Config', data: { Key: 'SchoolName', Value: settingsForm.SchoolName } }); 
                 } else { 
                     const idToUse = editItem._isNew ? form.ID : (editItem.ID || editItem.PageKey);
-                    
-                    // ใช้ finalImageUrl ที่ได้จากการอัปโหลด (ถ้ามี)
-                    let payload = { ...form, ID: idToUse, ImageURL: finalImageUrl };
-                    
+                    let payload = { ...form, ID: idToUse };
                     if (tab === 'Pages') { payload.PageKey = idToUse; }
-                    if (tab === 'News' && !payload.Date) { payload.Date = new Date(); }
+                    
+                    if (tab === 'News' && !payload.Date) {
+                        payload.Date = new Date();
+                    }
 
                     await api.post({ action: 'save', sheet: tab, data: payload }); 
                 } 
                 alert('บันทึกเรียบร้อย'); 
                 setEditItem(null); 
                 setForm({}); 
-                setUploadFile(null);
                 reload(); 
             };
 
@@ -404,7 +375,15 @@
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} 
+                                            {tab === 'Settings' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
+                                                <div>
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label>
+                                                    <input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />
+                                                    <ImageUploader onUploadComplete={(url) => setSettingsForm({...settingsForm, SchoolLogo: url})} />
+                                                    {settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}
+                                                </div>
+                                            </>} 
                                             
                                             {tab !== 'Settings' && (
                                                 <div>
@@ -442,51 +421,31 @@
                                             {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
                                                 if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
                                                 if(tab === 'News' && k === 'Content') return null;
-
-                                                // --- ส่วนปรับปรุง Input ImageURL ให้มีปุ่มอัปโหลด ---
-                                                if (k === 'ImageURL') {
-                                                    return (
-                                                        <div key={k} className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                                            <label className="text-sm font-bold text-gray-600 mb-2 block">{getLabel(k)}</label>
-                                                            
-                                                            <div className="flex flex-col gap-3">
-                                                                <input 
-                                                                    className="w-full border p-3 rounded-lg bg-white" 
-                                                                    value={form[k]||''} 
-                                                                    onChange={e=>setForm({...form,[k]:e.target.value})} 
-                                                                    placeholder="วางลิงก์รูปภาพ หรือ อัปโหลดจากเครื่อง" 
-                                                                />
-                                                                
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="relative">
-                                                                        <input type="file" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
-                                                                        <button type="button" className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow-sm hover:bg-gray-100 font-medium text-sm">
-                                                                            <i className="fas fa-upload mr-2"></i> เลือกรูปจากเครื่อง
-                                                                        </button>
-                                                                    </div>
-                                                                    {uploadFile && <span className="text-sm text-green-600 font-medium"><i className="fas fa-check-circle"></i> {uploadFile.name}</span>}
-                                                                </div>
-                                                                
-                                                                {/* Preview */}
-                                                                {(uploadFile || form[k]) && (
-                                                                    <div className="mt-2">
-                                                                        <p className="text-xs text-gray-400 mb-1">ตัวอย่างภาพ:</p>
-                                                                        <img src={uploadFile ? URL.createObjectURL(uploadFile) : getCleanImageUrl(form[k])} className="h-32 rounded border bg-white object-cover" onError={(e)=>e.target.style.display='none'} />
-                                                                    </div>
+                                                
+                                                const isImage = k === 'ImageURL';
+                                                
+                                                return (
+                                                    <div key={k}>
+                                                        <label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>
+                                                        {k === 'Content' ? (
+                                                            <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div>
+                                                        ) : (
+                                                            <>
+                                                                <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />
+                                                                {isImage && (
+                                                                    <>
+                                                                        <ImageUploader onUploadComplete={(url) => setForm({...form, [k]: url})} />
+                                                                        {form[k] && <div className="mt-2"><img src={form[k]} className="h-20 rounded border bg-gray-50 object-contain" onError={(e)=>e.target.style.display='none'} /></div>}
+                                                                    </>
                                                                 )}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                // ---------------------------------------------
-
-                                                return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> 
+                                                            </>
+                                                        )}
+                                                    </div> 
+                                                )
                                             })}
                                             
                                             <div className="flex gap-4">
-                                                <button type="submit" disabled={isUploading} className="flex-1 bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
-                                                    {isUploading ? <><i className="fas fa-spinner fa-spin mr-2"></i> กำลังอัปโหลดรูปและบันทึก...</> : 'บันทึกข้อมูล'}
-                                                </button>
+                                                <button type="submit" className="flex-1 bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button>
                                                 {!editItem._isNew && tab !== 'Settings' && (
                                                     <button type="button" onClick={() => handleDelete(editItem.ID || editItem.PageKey)} className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">
                                                         <i className="fas fa-trash-alt mr-2"></i> ลบข้อมูล
@@ -528,11 +487,13 @@
             const logoUrl = data.Config?.find(c => c.Key === 'SchoolLogo')?.Value || '';
             const schoolName = data.Config?.find(c => c.Key === 'SchoolName')?.Value || 'โรงเรียนพุขามครุฑมณีอุทิศ';
 
+            // เรียงลำดับ News หน้าบ้าน (Order ก่อน ถ้าไม่มีให้เรียง Date ใหม่->เก่า)
             const sortedNews = [...data.News].sort((a,b) => {
                 if(a.Order && b.Order) return Number(a.Order) - Number(b.Order);
                 return new Date(b.Date) - new Date(a.Date);
             });
             
+            // เรียงลำดับ Personnel หน้าบ้าน
             const sortedPersonnel = [...data.Personnel].sort((a,b) => Number(a.Order||0) - Number(b.Order||0));
 
             return (
@@ -567,7 +528,7 @@
                             <footer className="bg-primary text-white py-12 mt-auto">
                                 <div className="content-container text-center">
                                     <h3 className="font-bold text-xl">{schoolName}</h3>
-                                    <p className="text-sm text-blue-200 mt-2">© 2025 All Rights Reserved.</p>
+                                    <p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p>
                                     <div onClick={() => setShowLogin(true)} className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1">
                                         <i className="fas fa-lock text-[10px]"></i> เข้าสู่ระบบผู้ดูแล
                                     </div>
@@ -586,3 +547,4 @@
     </script>
 </body>
 </html>
+
