@@ -347,6 +347,14 @@
             const [settingsForm, setSettingsForm] = useState({ SchoolLogo: '', SchoolName: '' });
             const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล' };
             const getLabel = (key) => labelMap[key] || key;
+            
+            const imageHints = {
+                'Banners': 'แนะนำ 1920 x 800 px (แนวนอน)',
+                'Newsletters': 'แนะนำ 1414 x 2000 px (แนวตั้ง A4)',
+                'News': 'แนะนำ 1280 x 720 px (แนวนอน 16:9)',
+                'Personnel': 'แนะนำ 500 x 500 px (สี่เหลี่ยมจัตุรัส)',
+                'Pages': 'แนะนำ 1280 x 720 px หรือตามความเหมาะสม'
+            };
 
             const handleAddNew = () => {
                 setEditItem({ _isNew: true });
@@ -437,7 +445,10 @@
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div></>} 
+                                            {tab === 'Settings' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้ <span className="text-blue-500 font-normal text-xs ml-1">(แนะนำ 512x512 px)</span></label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div>
+                                            </>} 
                                             
                                             {tab !== 'Settings' && (
                                                 <div>
@@ -483,7 +494,13 @@
                                             {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
                                                 if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
                                                 if(tab === 'News' && k === 'Content') return null;
-                                                return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> 
+                                                return <div key={k}>
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">
+                                                        {getLabel(k)}
+                                                        {k === 'ImageURL' && imageHints[tab] && <span className="text-blue-500 font-normal text-xs ml-2">({imageHints[tab]})</span>}
+                                                    </label>
+                                                    {k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}
+                                                </div> 
                                             })}
                                             
                                             <div className="flex gap-4">
