@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280">
+    <meta name="viewport" content="width=1280"> <!-- บังคับ Desktop View ตามความต้องการเดิม -->
     <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
     <!-- Libraries -->
@@ -20,15 +20,17 @@
             color: #1e293b; 
             margin: 0; 
             padding: 0;
-            overflow-x: hidden;
+            min-width: 1280px; /* ความกว้างขั้นต่ำสำหรับ Desktop Mode */
+            overflow-x: auto;
         }
         
+        /* Utility Class สำหรับจัดเนื้อหาให้อยู่ตรงกลาง */
         .content-container {
-            max-width: 1200px;
+            max-width: 1240px; /* ขยายความกว้างคอนเทนเนอร์ขึ้นเล็กน้อย */
             margin-left: auto;
             margin-right: auto;
-            padding-left: 2.5rem; 
-            padding-right: 2.5rem;
+            padding-left: 1rem; /* ลด padding ซ้ายขวา เพื่อให้ชิดขอบมากขึ้น */
+            padding-right: 1rem;
         }
         
         /* THEME COLORS */
@@ -46,6 +48,7 @@
             cursor: pointer;
             transition: color 0.2s;
             white-space: nowrap;
+            font-size: 15px; /* ปรับขนาดฟอนต์เมนูให้กระชับ */
         }
         .nav-link:hover, .group:hover .nav-link { color: #004993; }
         .nav-link::after {
@@ -61,7 +64,7 @@
             left: 0;
             z-index: 50;
             background: white;
-            min-width: 260px;
+            min-width: 240px;
             border-top: 4px solid #004993;
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
             border-radius: 0 0 10px 10px;
@@ -86,7 +89,7 @@
         }
         .slide-active { opacity: 1; transform: scale(1.05); }
         
-        /* Animations */
+        /* General Animations */
         .fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .float-btn { animation: bounceIn 0.5s; box-shadow: 0 4px 15px rgba(0, 51, 102, 0.4); }
@@ -103,9 +106,9 @@
 
     <script type="text/babel">
         // ==========================================
-        //  วาง URL Apps Script ของคุณตรงนี้
+        //  วาง URL Apps Script ตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwiojCHTC11Khs6Em-wowUnCI7hykwnlM9Lc6dXp-pxTLd_Jv_1oBbEUExQjjR6jzkYDA/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-pVGPMyJ5Mio99NYfh-GgfeA9QsP8N1_1kdPVIYi2DdYdYXERhPxYIY5K_LhQ4OkJwA/exec"; 
         
         const { useState, useEffect, useRef } = React;
 
@@ -117,11 +120,9 @@
         // Helper function to clean Google Drive URLs
         const getCleanImageUrl = (url) => {
             if (!url) return '';
-            // Convert Google Drive View link to Direct link
             if (url.includes('drive.google.com') && url.includes('/view')) {
                 return url.replace('/view', '/preview').replace('file/d/', 'uc?id=').replace('/preview', '');
             }
-            // Convert Google Drive Open link
             if (url.includes('drive.google.com/open?id=')) {
                 return url.replace('open?id=', 'uc?id=');
             }
@@ -142,9 +143,7 @@
 
             const handleSubMenuClick = (id) => {
                 setPage({id: 'page', key: id});
-                if (document.activeElement instanceof HTMLElement) {
-                    document.activeElement.blur();
-                }
+                if (document.activeElement instanceof HTMLElement) { document.activeElement.blur(); }
             };
             
             const handleMenuClick = (id, type) => {
@@ -154,23 +153,27 @@
             return (
                 <nav className="w-full bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100 h-24">
                     <div className="content-container h-full flex justify-between items-center">
-                        <div className="flex items-center gap-4 cursor-pointer flex-shrink-0 pr-6" onClick={() => setPage({id: 'home'})}>
+                        
+                        {/* Logo Block: ลด padding-right และชิดซ้ายสุด */}
+                        <div className="flex items-center gap-3 cursor-pointer flex-shrink-0 pr-2" onClick={() => setPage({id: 'home'})}>
                             <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
-                                <h1 className="text-2xl font-bold text-primary leading-none whitespace-nowrap">{schoolName}</h1>
+                                <h1 className="text-xl font-bold text-primary leading-none whitespace-nowrap">{schoolName}</h1>
                                 <p className="text-sm text-gray-500 font-medium tracking-wide mt-1 whitespace-nowrap">Phukhamkrutmaneeuthit School</p>
                             </div>
                         </div>
 
-                        <div className="flex gap-8 items-center h-full ml-12"> 
+                        {/* Menu Items Block: ลด gap เพื่อไม่ให้ตกขอบ */}
+                        <div className="flex gap-5 items-center h-full"> 
                             {sortedMenus.map((m, i) => {
                                 const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
                                 return (
                                     <div key={i} className="relative group h-full flex items-center px-1 cursor-pointer">
                                         <span onClick={() => handleMenuClick(m.ID, m.Type)} 
-                                              className="nav-link flex items-center gap-1 uppercase tracking-wide text-[16px]">
+                                              className="nav-link flex items-center gap-1 uppercase tracking-wide">
                                             {m.Label} {m.Type === 'dropdown' && <i className="fas fa-chevron-down text-[10px] opacity-50 ml-1 transition-transform group-hover:rotate-180"></i>}
                                         </span>
+                                        
                                         {m.Type === 'dropdown' && sub.length > 0 && (
                                             <div className="dropdown-menu">
                                                 {sub.map(s => (
@@ -191,11 +194,9 @@
         };
 
         const Hero = ({ banners, schoolName }) => {
-            // Improved Logic: Check Active loosely (case-insensitive)
             const activeBanners = banners 
                 ? banners.filter(b => String(b.Active).trim().toUpperCase() === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0))
                 : [];
-                
             const displayBanners = activeBanners.length > 0 
                 ? activeBanners 
                 : [{ ImageURL: 'https://via.placeholder.com/1920x800/003366/ffffff?text=No+Active+Banner', Caption: 'ยินดีต้อนรับ' }];
@@ -212,33 +213,27 @@
 
             return (
                 <div className="w-full relative h-[600px] bg-primary group overflow-hidden">
-                    {/* Background Slide */}
-                    {displayBanners.map((b, i) => (
-                        <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
-                            <div className="absolute inset-0 bg-black/30 z-10"></div>
-                            <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} 
-                                onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
-                        </div>
-                    ))}
+                    <div className="absolute inset-0 bg-black">
+                        <img key={idx} src={getCleanImageUrl(displayBanners[idx].ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} 
+                            onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
+                    </div>
                     
-                    {/* Content Overlay */}
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-24">
+                    {/* Content Overlay: ขยับลงมาล่างสุด (pb-12) และลดขนาดตัวหนังสือ */}
+                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12">
                         <div className="content-container">
-                            {/* ใช้ Caption จาก Sheet ถ้ามี ถ้าไม่มีใช้ชื่อโรงเรียน */}
-                            <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl tracking-tight leading-tight">
+                            <span className="bg-white/20 backdrop-blur-md text-white px-6 py-2 text-sm font-bold rounded-full uppercase tracking-wider mb-4 shadow-xl border border-white/20 inline-block animate-bounce">Welcome</span>
+                            {/* ลดขนาดตัวหนังสือลงเหลือ text-4xl / 5xl */}
+                            <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight">
                                 {displayBanners[idx].Caption || schoolName}
                             </h2>
-                            <p className="text-xl md:text-2xl text-blue-100 font-light max-w-3xl mx-auto">
-                                แหล่งเรียนรู้คู่คุณธรรม นำวิชาการ สืบสานวัฒนธรรม
-                            </p>
+                            {/* ลบข้อความรองออกแล้ว ตามที่ขอ */}
                         </div>
                     </div>
 
-                    {/* Dots */}
                     {displayBanners.length > 1 && (
-                        <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-3 z-30">
+                        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-3 z-30">
                             {displayBanners.map((_, i) => (
-                                <button key={i} onClick={() => setIdx(i)} className={`h-2 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-10' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>
+                                <button key={i} onClick={() => setIdx(i)} className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? 'bg-white w-8' : 'bg-white/40 w-2 hover:bg-white/60'}`}></button>
                             ))}
                         </div>
                     )}
@@ -263,6 +258,7 @@
                                 <span className="bg-blue-50 text-[#004993] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
                                 <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
                             </div>
+                            {/* หัวข้อข่าวในหน้ารายละเอียด ลดขนาดลง */}
                             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
                             <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: item.Content.replace(/\n/g, '<br/>')}} />
                         </div>
@@ -316,7 +312,7 @@
                             <h2 className="text-2xl font-bold mb-6 text-primary">{menuTabs[tab]}</h2>
                             {!['Settings'].includes(tab) && !editItem && (<button onClick={()=>setEditItem({})} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6"><i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่</button>)}
                             {editItem && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn"><div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-blue-100"><div className="flex justify-between items-center mb-6"><h3 className="font-bold text-xl text-primary">{tab==='Settings' ? 'ตั้งค่าระบบ' : 'แก้ไขข้อมูล'}</h3><button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button></div><form onSubmit={handleSave} className="grid gap-5">{tab === 'Settings' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้</label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={getCleanImageUrl(settingsForm.SchoolLogo)} className="h-16 mt-2 border p-1 rounded" />}</div></>} {tab === 'Menus' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={editItem.ID} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div></>} {tab === 'Pages' && <><div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div><div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div></>} {Object.keys(form).map(k => { if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order'].includes(k)) return null; return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> })}<button className="bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button></form></div></div>)}
-                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">{tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) : (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" onError={(e)=>e.target.src='https://via.placeholder.com/100'} />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}</div>
+                            {tab !== 'Settings' && !editItem && (<div className="space-y-6">{tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) : (<div className="grid gap-3">{data[tab].map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL)} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>{setEditItem(item); setForm(item);}} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}</div>
                             )}
                         </main>
                     </div>
