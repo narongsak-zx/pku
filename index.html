@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280"> <!-- ยังคงบังคับมุมมอง Desktop ตามที่เคยขอ -->
+    <meta name="viewport" content="width=1280"> <!-- บังคับ Desktop View -->
     <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
     <!-- Libraries -->
@@ -23,7 +23,7 @@
             overflow-x: hidden; /* ป้องกันสกรอลแนวนอนส่วนเกิน */
         }
         
-        /* Container จัดเนื้อหาให้อยู่ตรงกลาง */
+        /* Utility Class สำหรับจัดเนื้อหาให้อยู่ตรงกลาง (Content is centered, BG is full width) */
         .content-container {
             max-width: 1200px;
             margin-left: auto;
@@ -32,7 +32,7 @@
             padding-right: 1rem;
         }
         
-        /* THEME COLORS */
+        /* THEME COLORS (Blue/White) */
         .text-primary { color: #003366; }
         .text-hover { color: #004993; }
         .bg-primary { background-color: #003366; }
@@ -55,19 +55,19 @@
         }
         .group:hover .nav-link::after { width: 100%; }
 
-        /* DROPDOWN (ปรับปรุง UI และระยะห่าง) */
+        /* DROPDOWN (Modern UI, Fixed on click/hover) */
         .dropdown-menu {
             position: absolute;
             top: 100%;
             left: 0;
             z-index: 50;
             background: white;
-            min-width: 260px; /* เพิ่มความกว้าง */
+            min-width: 260px;
             border-top: 4px solid #004993;
-            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2); /* เงาเข้มขึ้น */
-            border-radius: 0 0 10px 10px; /* โค้งมนมากขึ้น */
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2); 
+            border-radius: 0 0 10px 10px; 
             display: none;
-            margin-top: 5px; /* ขยับลงมาจาก Navbar */
+            margin-top: 5px; /* ขยับลงมาให้ดูดี */
         }
         .group:hover .dropdown-menu { 
             display: block; 
@@ -106,7 +106,7 @@
         // ==========================================
         //  วาง URL Apps Script ตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUZ7wZYvjculaFx2QXHtsPZHeRXOse2jpxY0VoVBACafEuvTJFfjhkIo4TZxsQcVdOmw/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHYBy-dxg7PcmP2C_6w4Gyoydh7egOS434pOgyLMvz6OtNf7EsAd35BbUoYJ2st5flEA/exec"; 
         
         const { useState, useEffect, useRef } = React;
 
@@ -127,10 +127,10 @@
                     .map(p => ({id: p.PageKey, label: p.Title}));
             };
 
-            // ฟังก์ชันกดเมนูย่อยแล้วปิด Dropdown ทันที (โดยการลบ focus)
+            // ฟังก์ชันกดเมนูย่อยแล้วปิด Dropdown ทันที 
             const handleSubMenuClick = (id) => {
                 setPage({id: 'page', key: id});
-                // Trick: คลิกที่ body เพื่อให้ hover state หลุด
+                // Trick: ลบ focus/hover state ออกทันที
                 if (document.activeElement instanceof HTMLElement) {
                     document.activeElement.blur();
                 }
