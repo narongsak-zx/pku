@@ -28,7 +28,7 @@
             max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
-            /* ปรับ padding ด้านข้างให้กว้างขึ้น เพื่อไม่ให้ติดขอบมากเกินไป */
+            /* เพิ่ม padding ด้านข้างเพื่อให้ไม่ชิดขอบจอ */
             padding-left: 2.5rem; 
             padding-right: 2.5rem;
         }
@@ -107,7 +107,7 @@
         // ==========================================
         //  วาง URL Apps Script ตรงนี้
         // ==========================================
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKKfyz7ngtrhPXBrOoiNMhP7ARh8SFk-xg_ZaVSLPZ8l8_q8kMfbgsz77t9Rqkj5DK4A/exec"; 
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKxn6SCaYJWZy1amkEShYMpk_RJRHlYW9loEUumSt9ugDUkOJR2S4Prh0EeA4K_yTYhw/exec"; 
         
         const { useState, useEffect, useRef } = React;
 
@@ -140,18 +140,15 @@
             const handleMenuClick = (id, type) => {
                 if (type === 'link') {
                     setPage({id: id});
-                } else if (type === 'dropdown') {
-                    // This is handled by CSS hover, but needed for click navigation fallback
-                    setPage({id: 'home'}); // Go home on main menu click if no other link is provided
-                }
+                } 
             };
 
             return (
                 <nav className="w-full bg-white shadow-lg sticky top-0 z-50 border-b border-gray-100 h-24">
                     <div className="content-container h-full flex justify-between items-center">
                         
-                        {/* Logo Block (Padding Adjusted in content-container) */}
-                        <div className="flex items-center gap-4 cursor-pointer flex-shrink-0" onClick={() => setPage({id: 'home'})}>
+                        {/* Logo Block (Added pr-4 for internal spacing, content-container handles external spacing) */}
+                        <div className="flex items-center gap-4 cursor-pointer flex-shrink-0 pr-4" onClick={() => setPage({id: 'home'})}>
                             <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-16 h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-2xl font-bold text-primary leading-none whitespace-nowrap">{schoolName}</h1>
@@ -192,6 +189,7 @@
 
         const Hero = ({ banners, schoolName }) => {
             const activeBanners = banners.filter(b => b.Active === 'TRUE').sort((a,b) => (a.Order||0) - (b.Order||0));
+            // ถ้าไม่มีรูป ให้ใช้รูป Placeholder
             const displayBanners = activeBanners.length > 0 ? activeBanners : [{ ImageURL: 'https://via.placeholder.com/1920x800?text=Welcome', Caption: 'ยินดีต้อนรับ' }];
             
             const [idx, setIdx] = useState(0);
@@ -210,14 +208,16 @@
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
                             <div className="absolute inset-0 bg-black/40 z-10"></div> {/* Overlay มืดลงนิดหน่อยเพื่อให้ตัวหนังสือชัด */}
-                            <img src={b.ImageURL} className={`slide-image ${i === idx ? 'slide-active' : ''}`} onError={(e)=>e.target.src='https://via.placeholder.com/1920x800'} />
+                            <img src={b.ImageURL} className={`slide-image ${i === idx ? 'slide-active' : ''}`} 
+                                // คำเตือน: หากภาพไม่โชว์ ให้ตรวจสอบว่า URL เป็นลิงก์ตรง (เช่น .jpg, .png) หรือเป็นลิงก์ Google Drive แบบ "uc?export=view" และตั้งค่าเป็น "Anyone with the link"
+                                onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800';}} />
                         </div>
                     ))}
                     
                     {/* Content Overlay (Centered and Moved to Bottom) */}
-                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-20">
+                    {/* Adjusted justify-end and pb-10 for moving content further down */}
+                    <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-10">
                         <div className="content-container">
-                            {/* REMOVED: Span "Welcome to Our School" */}
                             <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl tracking-tight leading-tight">{displayBanners[idx].Caption || schoolName}</h2>
                             <p className="text-xl md:text-2xl text-blue-100 font-light max-w-3xl mx-auto">แหล่งเรียนรู้คู่คุณธรรม นำวิชาการ สืบสานวัฒนธรรม</p>
                         </div>
