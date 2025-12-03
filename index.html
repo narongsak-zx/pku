@@ -116,7 +116,8 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
             width: 100%; 
         }
-        .html-content a { color: #004993; text-decoration: underline; font-weight: 600; }
+        .html-content a { color: #2563eb; text-decoration: underline; font-weight: 600; }
+        .html-content a:hover { color: #1e40af; }
         .html-content ul { list-style-type: disc; margin-left: 2rem; margin-bottom: 1rem; }
         .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; }
         .html-content p { margin-bottom: 1rem; }
@@ -350,6 +351,29 @@
             );
         };
 
+        // ฟังก์ชันแปลงข้อความเป็นลิ้งก์อย่างฉลาด (ไม่ทำลาย HTML เดิม)
+        const smartLinkify = (htmlContent) => {
+            if (!htmlContent) return '';
+            
+            // แยกส่วนที่เป็น tag ออกจาก text
+            // regex นี้จะจับ HTML Tags ทั้งหมด
+            const parts = htmlContent.split(/((?:<[^>]+>))/g);
+            
+            const linkedParts = parts.map(part => {
+                // ถ้าเป็น tag html (เริ่มด้วย <) ให้คืนค่าเดิม
+                if (part.trim().startsWith('<')) {
+                    return part;
+                }
+                // ถ้าเป็น text ธรรมดา ให้แปลง url เป็น <a>
+                return part.replace(
+                    /(https?:\/\/[^\s]+)/g, 
+                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline break-all">$1</a>'
+                );
+            });
+            
+            return linkedParts.join('');
+        };
+
         const NewsDetail = ({ item, onBack }) => (
             <div className="w-full bg-white min-h-[calc(100vh-6rem)]">
                 <div className="content-container py-12 fade-in">
@@ -371,7 +395,8 @@
                                 <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
-                            <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: item.Content}} />
+                            {/* ใช้ smartLinkify เพื่อแปลง URL เป็นลิ้งก์ */}
+                            <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: smartLinkify(item.Content)}} />
                         </div>
                     </div>
                 </div>
@@ -400,12 +425,11 @@
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
             
-            // UPDATE: เพิ่ม state สำหรับ SchoolPhone
             const [settingsForm, setSettingsForm] = useState({ 
                 SchoolLogo: '', 
                 SchoolName: '',
                 SchoolAddress: '',
-                SchoolPhone: '', // New
+                SchoolPhone: '', 
                 FacebookName: '',
                 FacebookURL: ''
             });
@@ -436,12 +460,11 @@
                 if(!confirm('ยืนยันการบันทึก?')) return; 
                 
                 if (tab === 'Settings') { 
-                    // UPDATE: บันทึกข้อมูล SchoolPhone ด้วย
                     const updates = [
                         { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo },
                         { Key: 'SchoolName', Value: settingsForm.SchoolName },
                         { Key: 'SchoolAddress', Value: settingsForm.SchoolAddress },
-                        { Key: 'SchoolPhone', Value: settingsForm.SchoolPhone }, // New
+                        { Key: 'SchoolPhone', Value: settingsForm.SchoolPhone },
                         { Key: 'FacebookName', Value: settingsForm.FacebookName },
                         { Key: 'FacebookURL', Value: settingsForm.FacebookURL }
                     ];
@@ -477,14 +500,12 @@
             };
             
             const openSettings = () => { 
-                // UPDATE: ดึงข้อมูล SchoolPhone
                 const getConfig = (key) => data.Config.find(c => c.Key === key)?.Value || '';
-                
                 setSettingsForm({ 
                     SchoolLogo: getConfig('SchoolLogo'), 
                     SchoolName: getConfig('SchoolName'),
                     SchoolAddress: getConfig('SchoolAddress'),
-                    SchoolPhone: getConfig('SchoolPhone'), // New
+                    SchoolPhone: getConfig('SchoolPhone'),
                     FacebookName: getConfig('FacebookName'),
                     FacebookURL: getConfig('FacebookURL')
                 }); 
@@ -518,6 +539,21 @@
                 return '';
             }
 
+            // ฟังก์ชันแทรกลิ้งก์ใน Admin
+            const insertLinkToContent = () => {
+                const url = prompt("ใส่ URL ที่ต้องการ (เช่น https://google.com):");
+                if (!url) return;
+                const text = prompt("ข้อความที่จะแสดง (ถ้าไม่ใส่จะใช้ URL):", url);
+                
+                const linkHtml = `<a href="${url}" target="_blank" style="color:#2563eb; text-decoration:underline;">${text || url}</a>`;
+                
+                // ต่อ String ไปดื้อๆ ที่ด้านหลัง (หรือตำแหน่งเคอร์เซอร์ถ้าทำได้ แต่วิธีนี้ง่ายสุดสำหรับ React state)
+                setForm(prev => ({
+                    ...prev,
+                    Content: (prev.Content || "") + " " + linkHtml
+                }));
+            };
+
             return (
                 <div className="fixed inset-0 bg-slate-50 z-[200] flex flex-col text-slate-800 font-sarabun text-base">
                     <header className="bg-white px-6 py-4 flex justify-between items-center shadow-sm z-10 border-b">
@@ -532,7 +568,6 @@
                         <main className="flex-1 p-8 overflow-auto">
                             <h2 className="text-2xl font-bold mb-4 text-primary">{menuTabs[tab]}</h2>
                             
-                            {/* INFO BOX FOR SORTING */}
                             {tab !== 'Settings' && (
                                 <div className="bg-blue-50 text-[#003366] p-3 rounded-lg mb-6 text-sm flex items-start gap-2 border border-blue-100 shadow-sm">
                                     <i className="fas fa-sort-amount-down mt-1"></i>
@@ -558,7 +593,6 @@
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
-                                            {/* UPDATE: ฟอร์มตั้งค่าระบบใหม่ เพิ่มเบอร์โทร */}
                                             {tab === 'Settings' && <>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
@@ -579,7 +613,6 @@
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
                                                     <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 10, 9, 8..." />
-                                                    {/* DYNAMIC HINT */}
                                                     <p className="text-sm text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded border border-blue-100 flex items-center gap-2">
                                                         <i className="fas fa-info-circle"></i> 
                                                         {isDescendingTab 
@@ -604,7 +637,10 @@
                                                     <input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่หัวข้อข่าวที่นี่..." />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">เนื้อหา</label>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="text-sm font-bold text-gray-600 block">เนื้อหา</label>
+                                                        <button type="button" onClick={insertLinkToContent} className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold flex items-center gap-1"><i className="fas fa-link"></i> แทรกลิ้งก์</button>
+                                                    </div>
                                                     <textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form.Content||''} onChange={e=>setForm({...form, Content: e.target.value})} placeholder="ใส่เนื้อหาข่าว หรือ HTML..."></textarea>
                                                 </div>
                                             </>}
@@ -728,7 +764,7 @@
             const logoUrl = getConfig('SchoolLogo');
             const schoolName = getConfig('SchoolName') || 'โรงเรียนพุขามครุฑมณีอุทิศ';
             const schoolAddress = getConfig('SchoolAddress');
-            const schoolPhone = getConfig('SchoolPhone') || '056-792781'; // New
+            const schoolPhone = getConfig('SchoolPhone') || '056-792781';
             const fbName = getConfig('FacebookName');
             const fbUrl = getConfig('FacebookURL');
 
