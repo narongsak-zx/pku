@@ -463,16 +463,14 @@
         const NewsDetail = ({ item, onBack }) => {
             const hasImage = !!item.ImageURL;
             
-            // Legacy single fields
-            const hasLegacyPdf = !!item.PDF_URL;
-            const hasLegacyLink = !!item.Link_URL;
-            
-            // New multi fields
+            // ===============================================
+            // MODIFIED: Use only Multi fields, Remove Legacy
+            // ===============================================
             const multiAttachments = safeJsonParse(item.Multi_Attachments);
             const multiLinks = safeJsonParse(item.Multi_Links);
             
-            const hasAnyAttachments = hasLegacyPdf || multiAttachments.length > 0;
-            const hasAnyLinks = hasLegacyLink || multiLinks.length > 0;
+            const hasAnyAttachments = multiAttachments.length > 0;
+            const hasAnyLinks = multiLinks.length > 0;
 
             return (
                 <div className="w-full bg-white min-h-[calc(100vh-6rem)]">
@@ -511,11 +509,6 @@
                                             <div className="flex flex-col gap-3">
                                                 <h3 className="text-lg font-bold text-gray-700 mb-2"><i className="fas fa-paperclip mr-2"></i>เอกสารแนบ (PDF)</h3>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {hasLegacyPdf && (
-                                                        <a href={getCleanPdfUrl(item.PDF_URL)} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-[#DC2626] text-white rounded-xl font-bold shadow hover:bg-[#C62323] transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
-                                                            <i className="fas fa-file-pdf text-xl"></i> <span>เปิดเอกสารแนบหลัก</span>
-                                                        </a>
-                                                    )}
                                                     {multiAttachments.map((f, idx) => (
                                                         <a key={idx} href={getCleanPdfUrl(f.url)} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold shadow-sm hover:bg-red-50 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
                                                             <i className="fas fa-file-pdf text-xl"></i> <span>{f.label || `เอกสารแนบ ${idx+1}`}</span>
@@ -533,11 +526,6 @@
                                             <div className="flex flex-col gap-3">
                                                 <h3 className="text-lg font-bold text-gray-700 mb-2"><i className="fas fa-link mr-2"></i>ลิงก์ที่เกี่ยวข้อง</h3>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    {hasLegacyLink && (
-                                                        <a href={item.Link_URL} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-green-600 text-white rounded-xl font-bold shadow hover:bg-green-700 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
-                                                            <i className="fas fa-external-link-alt text-xl"></i> <span>{item.Link_Label || 'ไปที่ลิงก์'}</span>
-                                                        </a>
-                                                    )}
                                                     {multiLinks.map((l, idx) => (
                                                         <a key={idx} href={l.url} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-white border border-green-200 text-green-700 rounded-xl font-bold shadow-sm hover:bg-green-50 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
                                                             <i className="fas fa-globe text-xl"></i> <span>{l.label || `ลิงก์ที่ ${idx+1}`}</span>
@@ -559,7 +547,10 @@
         // UPDATE: NewsCard รับ prop defaultBanner เพิ่ม
         const NewsCard = ({ n, onClick, defaultBanner }) => {
             const hasImage = !!n.ImageURL;
-            const hasPdf = !!n.PDF_URL || (n.Multi_Attachments && safeJsonParse(n.Multi_Attachments).length > 0);
+            // ===============================================
+            // MODIFIED: Check ONLY Multi_Attachments
+            // ===============================================
+            const hasPdf = n.Multi_Attachments && safeJsonParse(n.Multi_Attachments).length > 0;
 
             return (
                 <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition duration-300 transform">
@@ -761,9 +752,7 @@
                 'Title': 'หัวข้อ / ชื่อ', 
                 'Content': 'เนื้อหา (HTML/Embed)', 
                 'ImageURL': 'ลิงก์รูปภาพ (URL)', 
-                'PDF_URL': 'ลิ้งก์ PDF หลัก (แบบเดี่ยว)',
-                'Link_URL': 'ลิงก์ปุ่มกดหลัก (แบบเดี่ยว)',
-                'Link_Label': 'ข้อความบนปุ่มกดหลัก',
+                // Removed Legacy Labels from Map
                 'Category': 'หมวดหมู่', 
                 'Name': 'ชื่อ-นามสกุล', 
                 'Position': 'ตำแหน่ง', 
@@ -1080,7 +1069,7 @@
                                             {tab === 'News' && <>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อข่าว</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่หัวข้อข่าวที่นี่..." /></div>
                                                 
-                                                {/* ---- NEW MULTI LISTS ---- */}
+                                                {/* ---- NEW MULTI LISTS (RETAINED) ---- */}
                                                 <div className="space-y-4 border-l-4 border-blue-200 pl-4 py-2">
                                                     <ListEditor 
                                                         label="รายการเอกสาร PDF (แนบหลายไฟล์)" 
@@ -1103,26 +1092,9 @@
                                                     />
                                                 </div>
                                                 
-                                                {/* Hide Legacy inputs in a collapsed detail or just keep them as optional fallbacks */}
-                                                <details className="bg-gray-100 p-3 rounded-lg">
-                                                    <summary className="cursor-pointer text-xs font-bold text-gray-500 hover:text-gray-700">แสดงช่องกรอกแบบเก่า (Single Field)</summary>
-                                                    <div className="mt-3 space-y-3">
-                                                        <div>
-                                                            <label className="text-sm font-bold text-gray-400 mb-1 block">ลิ้งก์ PDF หลัก (แบบเก่า)</label>
-                                                            <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.PDF_URL||''} onChange={e=>setForm({...form, PDF_URL: e.target.value})} />
-                                                        </div>
-                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                            <div>
-                                                                <label className="text-sm font-bold text-gray-400 mb-1 block">ลิงก์ปุ่มกดหลัก (แบบเก่า)</label>
-                                                                <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.Link_URL||''} onChange={e=>setForm({...form, Link_URL: e.target.value})} />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-bold text-gray-400 mb-1 block">ข้อความปุ่ม (แบบเก่า)</label>
-                                                                <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.Link_Label||''} onChange={e=>setForm({...form, Link_Label: e.target.value})} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </details>
+                                                {/* =============================================== */}
+                                                {/* REMOVED: Legacy Single Field Inputs details block */}
+                                                {/* =============================================== */}
 
                                                 <div><div className="flex justify-between items-center mb-1"><label className="text-sm font-bold text-gray-600 block">เนื้อหา</label><button type="button" onClick={() => insertLinkToContent('Content')} className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold flex items-center gap-1"><i className="fas fa-link"></i> แทรกลิ้งก์</button></div><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form.Content||''} onChange={e=>setForm({...form, Content: e.target.value})} placeholder="ใส่เนื้อหาข่าว หรือ HTML..."></textarea></div>
                                             </>}
@@ -1377,5 +1349,4 @@
     </script>
 </body>
 </html>
-
 
