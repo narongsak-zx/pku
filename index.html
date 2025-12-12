@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=1280">
     <title>โรงเรียนพุขามครุฑมณีอุทิศ</title>
     
+    <!-- ========================================== -->
+    <!-- 1. External Libraries                      -->
+    <!-- ========================================== -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,6 +15,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- ========================================== -->
+    <!-- 2. Styles (CSS)                            -->
+    <!-- ========================================== -->
     <style>
         html, body {
             margin: 0;
@@ -54,9 +60,15 @@
             cursor: pointer;
             transition: color 0.2s;
             white-space: nowrap;
-            font-size: 15px; 
+            font-size: 16px;
             user-select: none;
         }
+        @media (min-width: 1440px) {
+            .nav-link { 
+                font-size: 18px; 
+            }
+        }
+
         .nav-link:hover, .group:hover .nav-link { color: #004993; }
         .nav-link::after {
             content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 3px;
@@ -80,6 +92,12 @@
             margin-top: 12px;
             padding: 8px;
             transform-origin: top left;
+        }
+
+        .dropdown-right {
+            left: auto !important;
+            right: 0 !important;
+            transform-origin: top right !important;
         }
 
         .dropdown-visible {
@@ -122,7 +140,6 @@
         .html-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 15px 0; }
         .html-content p { margin-bottom: 1rem; }
 
-        /* Custom Scrollbar for Newsletter & Draggable Cursor */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         .cursor-grab { cursor: grab; }
@@ -130,26 +147,60 @@
     </style>
 </head>
 <body>
+
+    <!-- Ribbon: Corrected URL -->
+    <img src="https://raw.githubusercontent.com/KongNontawatDev/Black-Mourning-Ribbon/2150640c0e623c7fbcca07024287b597f7999a84/ribbon_top_right.png" 
+     alt="Black mourning ribbon for websites, top right corner" 
+     style="position:fixed; top:0; right:0; width:70px; opacity:0.9; z-index:9999; pointer-events:none;"
+     onError="this.src='https://raw.githubusercontent.com/Kaiat/ribbon/master/black-ribbon-top-right.png';">
+     
     <div id="root"></div>
 
     <script type="text/babel">
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxM2oNuwTIu-6i2Xh-ll6CG8MTmzT0Yi1jdMkG-ajHo32FBed1XIB0MKkE0sTsC1uqH/exec"; 
+        // ==========================================
+        // 3. Config
+        // ==========================================
+        const CONFIG = {
+            APPS_SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxM2oNuwTIu-6i2Xh-ll6CG8MTmzT0Yi1jdMkG-ajHo32FBed1XIB0MKkE0sTsC1uqH/exec"
+        };
         
         const { useState, useEffect, useRef } = React;
 
         const api = {
-            fetchAll: async () => await (await fetch(`${APPS_SCRIPT_URL}?action=readAll`)).json(),
-            post: async (payload) => await (await fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })).json()
+            fetchAll: async () => await (await fetch(`${CONFIG.APPS_SCRIPT_URL}?action=readAll`)).json(),
+            post: async (payload) => await (await fetch(CONFIG.APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })).json()
         };
 
+        // ==========================================
+        // 4. Utils
+        // ==========================================
+        
         const getCleanImageUrl = (url) => {
             if (!url) return '';
             const u = url.trim();
-            if (u.includes('drive.google.com') && u.includes('/view')) {
-                return u.replace('/view', '/preview').replace('file/d/', 'uc?id=').replace('/preview', '');
+            if (u.includes('drive.google.com') || u.includes('docs.google.com')) {
+                let id = '';
+                const parts = u.split(/\/d\//);
+                if (parts.length > 1) id = parts[1].split('/')[0];
+                if (!id && u.includes('id=')) {
+                    const match = u.match(/id=([a-zA-Z0-9_-]+)/);
+                    if (match && match[1]) id = match[1];
+                }
+                if (!id) {
+                     const match = u.match(/[-\w]{25,}/);
+                     if (match && match[0]) id = match[0];
+                }
+                if (id) return `https://drive.google.com/thumbnail?id=${id}&sz=w1920`;
             }
-            if (u.includes('drive.google.com/open?id=')) {
-                return u.replace('open?id=', 'uc?id=');
+            return u;
+        };
+
+        const getCleanPdfUrl = (url) => {
+            if (!url) return '';
+            const u = url.trim();
+            if (u.includes('drive.google.com')) {
+                // Ensure preview mode is used
+                return u.replace(/\/view.*/, '/preview').replace(/\/open\?id=/, '/file/d/').replace(/\/edit.*/, '/preview');
             }
             return u;
         };
@@ -162,12 +213,44 @@
             return text.length > length ? text.substring(0, length) + "..." : text;
         };
 
-        // --- COMPONENTS ---
+        const smartLinkify = (htmlContent) => {
+            if (!htmlContent) return '';
+            const parts = htmlContent.split(/((?:<[^>]+>))/g);
+            const linkedParts = parts.map(part => {
+                if (part.trim().startsWith('<')) return part;
+                return part.replace(
+                    /(https?:\/\/[^\s]+)/g, 
+                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline break-all">$1</a>'
+                );
+            });
+            return linkedParts.join('');
+        };
+        
+        // Helper to safely parse JSON from sheet
+        const safeJsonParse = (str) => {
+            try {
+                return str ? JSON.parse(str) : [];
+            } catch (e) {
+                return [];
+            }
+        };
 
-        const Navbar = ({ setPage, logoUrl, schoolName, pages, mainMenus }) => {
+        // ==========================================
+        // 5. Components
+        // ==========================================
+
+        const Navbar = ({ setPage, logoUrl, schoolName, schoolNameEN, pages, mainMenus }) => {
             const [activeDropdown, setActiveDropdown] = useState(null);
 
-            const sortedMenus = mainMenus ? [...mainMenus].sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
+            const sortedMenus = mainMenus ? [...mainMenus]
+                .filter(m => m.ID !== 'contact') 
+                .sort((a,b) => Number(a.Order||0) - Number(b.Order||0)) : [];
+            
+            const menuRows = [];
+            for (let i = 0; i < sortedMenus.length; i += 7) {
+                menuRows.push(sortedMenus.slice(i, i + 7));
+            }
+
             const getSubMenu = (cat) => pages.filter(p => p.MenuCategory === cat).sort((a,b) => Number(a.Order||0) - Number(b.Order||0)).map(p => ({id: p.PageKey, label: p.Title}));
             
             const handleSubMenuClick = (e, id) => { 
@@ -177,13 +260,25 @@
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur(); 
             };
             
-            const handleMenuClick = (e, id, type) => {
+            const handleMenuClick = (e, m) => {
                 e.preventDefault(); 
+                const { ID: id, Type: type } = m;
+
                 if (type === 'link') {
                     setPage({id: id});
                     setActiveDropdown(null); 
-                } else if (type === 'dropdown') {
+                } 
+                else if (type === 'dropdown') {
                     setActiveDropdown(prev => prev === id ? null : id);
+                } 
+                else if (type === 'page') {
+                    const targetPage = pages.find(p => p.MenuCategory === id);
+                    if (targetPage) {
+                        setPage({id: 'page', key: targetPage.PageKey});
+                    } else {
+                        alert('ยังไม่มีเนื้อหาสำหรับเมนูนี้');
+                    }
+                    setActiveDropdown(null);
                 }
             };
 
@@ -194,48 +289,62 @@
             }, []);
 
             return (
-                <nav className="w-full bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-[100] border-b border-gray-100 h-24" onClick={e => e.stopPropagation()}>
-                    <div className="content-container h-full flex justify-between items-center">
-                        <div className="flex items-center gap-3 cursor-pointer flex-shrink-0" onClick={() => { setPage({id: 'home'}); setActiveDropdown(null); }}>
-                            <img src={logoUrl || 'https://via.placeholder.com/150?text=Logo'} className="w-14 h-14 md:w-16 md:h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
+                <nav className="w-full bg-white/95 backdrop-blur-md shadow-lg sticky top-0 z-[100] border-b border-gray-100 min-h-[6rem] py-2" onClick={e => e.stopPropagation()}>
+                    <div className="content-container flex items-center gap-4 lg:gap-8">
+                        <div 
+                            className="flex items-center gap-4 cursor-pointer flex-shrink-0 relative z-20 py-2 pr-4" 
+                            onClick={() => { setPage({id: 'home'}); setActiveDropdown(null); }}
+                        >
+                            <img src={getCleanImageUrl(logoUrl) || 'https://via.placeholder.com/150?text=Logo'} className="w-14 h-14 md:w-16 md:h-16 object-contain" onError={(e)=>e.target.style.display='none'} />
                             <div className="flex flex-col justify-center">
                                 <h1 className="text-xl md:text-2xl font-bold text-primary leading-none whitespace-nowrap">{schoolName}</h1>
-                                <p className="text-sm text-gray-500 font-medium tracking-wide mt-1 whitespace-nowrap">Phukhamkrutmaneeuthit School</p>
+                                <p className="text-sm text-gray-500 font-medium tracking-wide mt-1 whitespace-nowrap">{schoolNameEN || 'Phukhamkrutmaneeuthit School'}</p>
                             </div>
                         </div>
-                        <div className="flex gap-5 lg:gap-6 items-center h-full ml-auto"> 
-                            {sortedMenus.map((m, i) => {
-                                const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
-                                const isOpen = activeDropdown === m.ID; 
+
+                        <div className="flex flex-col items-end justify-center gap-1 h-full flex-1 min-w-0"> 
+                            {menuRows.map((row, rowIndex) => {
+                                const isFullRow = row.length === 7;
+                                const justifyClass = isFullRow ? 'justify-between' : 'justify-start gap-6 lg:gap-8';
 
                                 return (
-                                    <div key={i} className="relative group h-full flex items-center px-1 cursor-pointer select-none">
-                                        <span onClick={(e) => handleMenuClick(e, m.ID, m.Type)} className="nav-link flex items-center gap-1 uppercase tracking-wide">
-                                            {m.Label} 
-                                            {m.Type === 'dropdown' && (
-                                                <i className={`fas fa-chevron-down text-[10px] opacity-50 ml-1 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
-                                            )}
-                                        </span>
-                                        {m.Type === 'dropdown' && sub.length > 0 && (
-                                            <div className={`dropdown-menu ${isOpen ? 'dropdown-visible' : ''}`}>
-                                                <div className="flex flex-col gap-1">
-                                                    {sub.map(s => (
-                                                        <div 
-                                                            key={s.id} 
-                                                            onClick={(e) => handleSubMenuClick(e, s.id)} 
-                                                            className="px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-[#004993] transition-all duration-200 text-base font-medium whitespace-nowrap cursor-pointer flex items-center group/item text-slate-600 hover:pl-6"
-                                                        >
-                                                            <span className="w-6 flex items-center justify-center mr-1">
-                                                                <i className="fas fa-chevron-right text-[10px] text-gray-300 group-hover/item:text-[#004993] transition-colors"></i>
-                                                            </span>
-                                                            {s.label}
+                                    <div key={rowIndex} className={`flex ${justifyClass} items-center w-full`}>
+                                        {row.map((m, i) => {
+                                            const sub = m.Type === 'dropdown' ? getSubMenu(m.ID) : [];
+                                            const isOpen = activeDropdown === m.ID; 
+                                            const isRightAligned = isFullRow && i >= row.length - 2;
+
+                                            return (
+                                                <div key={m.ID} className="relative group h-full flex items-center px-1 cursor-pointer select-none">
+                                                    <span onClick={(e) => handleMenuClick(e, m)} className="nav-link flex items-center gap-1 uppercase tracking-wide">
+                                                        {m.Label} 
+                                                        {m.Type === 'dropdown' && (
+                                                            <i className={`fas fa-chevron-down text-[10px] opacity-50 ml-1 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}></i>
+                                                        )}
+                                                    </span>
+                                                    {m.Type === 'dropdown' && sub.length > 0 && (
+                                                        <div className={`dropdown-menu ${isOpen ? 'dropdown-visible' : ''} ${isRightAligned ? 'dropdown-right' : ''}`}>
+                                                            <div className="flex flex-col gap-1">
+                                                                {sub.map(s => (
+                                                                    <div 
+                                                                        key={s.id} 
+                                                                        onClick={(e) => handleSubMenuClick(e, s.id)} 
+                                                                        className="px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-[#004993] transition-all duration-200 text-base font-medium whitespace-nowrap cursor-pointer flex items-center group/item text-slate-600 hover:pl-6"
+                                                                    >
+                                                                        <span className="w-6 flex items-center justify-center mr-1">
+                                                                            <i className="fas fa-chevron-right text-[10px] text-gray-300 group-hover/item:text-[#004993] transition-colors"></i>
+                                                                        </span>
+                                                                        {s.label}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    ))}
+                                                    )}
                                                 </div>
-                                            </div>
-                                        )}
+                                            );
+                                        })}
                                     </div>
-                                )
+                                );
                             })}
                         </div>
                     </div>
@@ -257,14 +366,14 @@
                 <div className="w-full max-w-[1920px] mx-auto relative aspect-[1920/800] bg-primary group overflow-hidden">
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
-                            <div className="absolute inset-0 bg-black/30 z-10"></div>
+                            {/* REMOVED DARK OVERLAY */}
                             <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
                         </div>
                     ))}
                     {displayBanners[idx].Caption && (
-                        <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12">
+                        <div className="absolute inset-0 z-20 flex flex-col justify-end items-center text-center p-4 pb-12 pointer-events-none">
                             <div className="content-container">
-                                <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight">{displayBanners[idx].Caption}</h2>
+                                <h2 className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-2xl tracking-tight leading-tight" style={{textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>{displayBanners[idx].Caption}</h2>
                             </div>
                         </div>
                     )}
@@ -351,151 +460,468 @@
             );
         };
 
-        // ฟังก์ชันแปลงข้อความเป็นลิ้งก์อย่างฉลาด (ไม่ทำลาย HTML เดิม)
-        const smartLinkify = (htmlContent) => {
-            if (!htmlContent) return '';
+        const NewsDetail = ({ item, onBack }) => {
+            const hasImage = !!item.ImageURL;
             
-            // แยกส่วนที่เป็น tag ออกจาก text
-            // regex นี้จะจับ HTML Tags ทั้งหมด
-            const parts = htmlContent.split(/((?:<[^>]+>))/g);
+            // Legacy single fields
+            const hasLegacyPdf = !!item.PDF_URL;
+            const hasLegacyLink = !!item.Link_URL;
             
-            const linkedParts = parts.map(part => {
-                // ถ้าเป็น tag html (เริ่มด้วย <) ให้คืนค่าเดิม
-                if (part.trim().startsWith('<')) {
-                    return part;
-                }
-                // ถ้าเป็น text ธรรมดา ให้แปลง url เป็น <a>
-                return part.replace(
-                    /(https?:\/\/[^\s]+)/g, 
-                    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline break-all">$1</a>'
-                );
-            });
+            // New multi fields
+            const multiAttachments = safeJsonParse(item.Multi_Attachments);
+            const multiLinks = safeJsonParse(item.Multi_Links);
             
-            return linkedParts.join('');
-        };
+            const hasAnyAttachments = hasLegacyPdf || multiAttachments.length > 0;
+            const hasAnyLinks = hasLegacyLink || multiLinks.length > 0;
 
-        const NewsDetail = ({ item, onBack }) => (
-            <div className="w-full bg-white min-h-[calc(100vh-6rem)]">
-                <div className="content-container py-12 fade-in">
-                    <button onClick={onBack} className="mb-8 bg-gray-50 hover:bg-blue-50 text-[#004993] border border-blue-100 px-6 py-2.5 rounded-full flex items-center gap-2 transition font-bold shadow-sm hover:shadow-md group"><i className="fas fa-arrow-left group-hover:-translate-x-1 transition-transform"></i> ย้อนกลับ</button>
-                    <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
-                        {item.ImageURL && (
-                            <div className="w-full flex justify-center bg-gray-100 py-6">
-                                <img 
-                                    src={getCleanImageUrl(item.ImageURL)} 
-                                    className="w-full h-auto object-cover rounded-lg shadow-md"
-                                    style={{ maxWidth: '800px', aspectRatio: '1280/720' }}
-                                    onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1280x720?text=No+Image';}} 
-                                />
+            return (
+                <div className="w-full bg-white min-h-[calc(100vh-6rem)]">
+                    <div className="content-container py-12 fade-in">
+                        <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
+                            
+                            {/* 1. IMAGE SECTION */}
+                            {hasImage && (
+                                <div className="w-full flex justify-center bg-gray-100 border-b border-gray-100">
+                                     <img 
+                                        src={getCleanImageUrl(item.ImageURL)} 
+                                        className="w-full h-auto object-cover"
+                                        style={{ maxHeight: '600px', width: 'auto', maxWidth: '100%' }}
+                                        onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1280x720?text=No+Image';}} 
+                                    />
+                                </div>
+                            )}
+
+                            {/* 2. TEXT CONTENT SECTION */}
+                            <div className="p-12 md:p-16 max-w-5xl mx-auto">
+                                <div className="flex flex-wrap items-center gap-4 mb-8">
+                                    <span className="bg-blue-50 text-[#003366] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
+                                    <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
+                                </div>
+                                <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
+                                <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: smartLinkify(item.Content)}} />
                             </div>
-                        )}
-                        <div className="p-12 md:p-16 max-w-5xl mx-auto">
-                            <div className="flex flex-wrap items-center gap-4 mb-8">
-                                <span className="bg-blue-50 text-[#004993] px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-blue-100">{item.Category}</span>
-                                <span className="text-gray-500 text-sm flex items-center gap-2 font-medium"><i className="far fa-calendar-alt"></i> {new Date(item.Date).toLocaleDateString('th-TH', { dateStyle: 'long' })}</span>
-                            </div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-10 leading-tight">{item.Title}</h1>
-                            {/* ใช้ smartLinkify เพื่อแปลง URL เป็นลิ้งก์ */}
-                            <div className="prose prose-lg prose-blue max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap html-content" dangerouslySetInnerHTML={{__html: smartLinkify(item.Content)}} />
+
+                            {/* 3. ATTACHMENT & LINK SECTION (UPDATED) */}
+                            {(hasAnyAttachments || hasAnyLinks) && (
+                                <div className="w-full bg-gray-50 border-t border-gray-200 p-8 md:p-12">
+                                    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+                                        
+                                        {/* PDFs / Attachments */}
+                                        {hasAnyAttachments && (
+                                            <div className="flex flex-col gap-3">
+                                                <h3 className="text-lg font-bold text-gray-700 mb-2"><i className="fas fa-paperclip mr-2"></i>เอกสารแนบ (PDF)</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {hasLegacyPdf && (
+                                                        <a href={getCleanPdfUrl(item.PDF_URL)} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-[#DC2626] text-white rounded-xl font-bold shadow hover:bg-[#C62323] transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
+                                                            <i className="fas fa-file-pdf text-xl"></i> <span>เปิดเอกสารแนบหลัก</span>
+                                                        </a>
+                                                    )}
+                                                    {multiAttachments.map((f, idx) => (
+                                                        <a key={idx} href={getCleanPdfUrl(f.url)} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-white border border-red-200 text-red-600 rounded-xl font-bold shadow-sm hover:bg-red-50 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
+                                                            <i className="fas fa-file-pdf text-xl"></i> <span>{f.label || `เอกสารแนบ ${idx+1}`}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Divider if both exist */}
+                                        {hasAnyAttachments && hasAnyLinks && <div className="border-t border-gray-200 my-2"></div>}
+
+                                        {/* External Links */}
+                                        {hasAnyLinks && (
+                                            <div className="flex flex-col gap-3">
+                                                <h3 className="text-lg font-bold text-gray-700 mb-2"><i className="fas fa-link mr-2"></i>ลิงก์ที่เกี่ยวข้อง</h3>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {hasLegacyLink && (
+                                                        <a href={item.Link_URL} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-green-600 text-white rounded-xl font-bold shadow hover:bg-green-700 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
+                                                            <i className="fas fa-external-link-alt text-xl"></i> <span>{item.Link_Label || 'ไปที่ลิงก์'}</span>
+                                                        </a>
+                                                    )}
+                                                    {multiLinks.map((l, idx) => (
+                                                        <a key={idx} href={l.url} target="_blank" rel="noopener noreferrer" className="px-6 py-4 bg-white border border-green-200 text-green-700 rounded-xl font-bold shadow-sm hover:bg-green-50 transition flex items-center justify-center gap-3 hover:-translate-y-1 transform duration-200">
+                                                            <i className="fas fa-globe text-xl"></i> <span>{l.label || `ลิงก์ที่ ${idx+1}`}</span>
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                            
                         </div>
                     </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
-        const NewsCard = ({ n, onClick }) => (
-            <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition duration-300 transform">
-                <div className="h-64 overflow-hidden relative bg-gray-100">
-                     <img src={getCleanImageUrl(n.ImageURL)} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=News';}} />
-                     <div className="absolute top-4 left-4"><span className="bg-white/95 backdrop-blur text-[#004993] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span></div>
+        // UPDATE: NewsCard รับ prop defaultBanner เพิ่ม
+        const NewsCard = ({ n, onClick, defaultBanner }) => {
+            const hasImage = !!n.ImageURL;
+            const hasPdf = !!n.PDF_URL || (n.Multi_Attachments && safeJsonParse(n.Multi_Attachments).length > 0);
+
+            return (
+                <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition duration-300 transform">
+                    <div className="aspect-[16/9] w-full overflow-hidden relative bg-gray-100">
+                         {/* Case 1: Has specific image -> Show it */}
+                         {hasImage ? (
+                            <>
+                                <img 
+                                    src={getCleanImageUrl(n.ImageURL)} 
+                                    className="w-full h-full object-cover group-hover:scale-110 transition duration-700" 
+                                    onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/400?text=News';}} 
+                                />
+                                {hasPdf && (
+                                    <div className="absolute bottom-2 right-2 bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg z-10" title="มีเอกสาร PDF">
+                                        <i className="fas fa-file-pdf text-lg"></i>
+                                    </div>
+                                )}
+                            </>
+                         ) : (
+                            /* Case 2: No Image */
+                            hasPdf ? (
+                                /* Case 2a: Has PDF -> Show PDF Placeholder (Original Logic) */
+                                <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 flex-col">
+                                    <i className="fas fa-file-pdf text-4xl mb-2 text-red-500"></i>
+                                    <span className="text-sm font-bold">เอกสาร PDF</span>
+                                </div>
+                            ) : (
+                                /* Case 2b: No Image AND No PDF -> Show Default Banner if available, else White BG */
+                                defaultBanner ? (
+                                    <img 
+                                        src={getCleanImageUrl(defaultBanner)} 
+                                        className="w-full h-full object-cover group-hover:scale-110 transition duration-700" 
+                                        onError={(e)=>{e.target.onerror=null; e.target.style.display='none';}} 
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-white"></div>
+                                )
+                            )
+                         )}
+                         <div className="absolute top-4 left-4 pointer-events-none">
+                             <span className="bg-white/95 backdrop-blur text-[#003366] text-xs font-bold px-3 py-1.5 rounded-lg shadow-md">{n.Category}</span>
+                         </div>
+                    </div>
+                    <div className="p-8 flex-1 flex flex-col">
+                        <div className="text-xs text-gray-400 mb-3 font-medium flex items-center gap-2"><i className="far fa-clock"></i> {new Date(n.Date).toLocaleDateString('th-TH')}</div>
+                        <h3 className="font-bold text-xl mb-3 text-primary line-clamp-2 group-hover:text-[#004993] transition leading-snug">{n.Title}</h3>
+                        <p className="text-gray-500 text-sm mb-6 flex-1 leading-relaxed">
+                            {getExcerpt(n.Content, 10)}
+                        </p>
+                        <div className="pt-5 border-t border-gray-50 text-[#004993] text-sm font-bold group-hover:underline flex items-center gap-1">อ่านเพิ่มเติม <i className="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i></div>
+                    </div>
                 </div>
-                <div className="p-8 flex-1 flex flex-col">
-                    <div className="text-xs text-gray-400 mb-3 font-medium flex items-center gap-2"><i className="far fa-clock"></i> {new Date(n.Date).toLocaleDateString('th-TH')}</div>
-                    <h3 className="font-bold text-xl mb-3 text-primary line-clamp-2 group-hover:text-[#004993] transition leading-snug">{n.Title}</h3>
-                    <p className="text-gray-500 text-sm mb-6 flex-1 leading-relaxed">
-                        {getExcerpt(n.Content, 10)}
-                    </p>
-                    <div className="pt-5 border-t border-gray-50 text-[#004993] text-sm font-bold group-hover:underline flex items-center gap-1">อ่านเพิ่มเติม <i className="fas fa-arrow-right text-xs transition-transform group-hover:translate-x-1"></i></div>
+            );
+        };
+
+        const Footer = ({ schoolName, schoolNameEN, schoolAddress, schoolPhone, fbName, fbUrl, logoUrl, onAdminClick }) => {
+            return (
+                <footer className="bg-primary text-white pt-16 pb-8 mt-auto">
+                    <div className="content-container">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                            <div className="md:col-span-1">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <img src={getCleanImageUrl(logoUrl)} className="w-14 h-14 bg-white rounded-full p-1 object-contain" onError={(e)=>e.target.style.display='none'}/>
+                                    <div>
+                                        <h3 className="font-bold text-xl leading-tight">{schoolName}</h3>
+                                        <p className="text-blue-300 text-sm">{schoolNameEN || 'Phukhamkrutmaneeuthit School'}</p>
+                                    </div>
+                                </div>
+                                <ul className="space-y-4 text-blue-100">
+                                    <li className="flex items-start gap-3">
+                                        <i className="fas fa-map-marker-alt mt-1.5 text-blue-300 w-5 text-center"></i>
+                                        <span className="leading-relaxed text-sm md:text-base">{schoolAddress || 'ที่อยู่โรงเรียน'}</span>
+                                    </li>
+                                    <li className="flex items-center gap-3">
+                                        <i className="fas fa-phone text-blue-300 w-5 text-center"></i>
+                                        <span className="font-medium tracking-wide">{schoolPhone}</span>
+                                    </li>
+                                    {fbName && fbUrl && (
+                                        <li className="flex items-center gap-3">
+                                            <i className="fab fa-facebook text-blue-300 w-5 text-center text-lg"></i>
+                                            <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white underline decoration-blue-300/50 hover:decoration-white transition font-medium">{fbName}</a>
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
+
+                            <div className="md:col-span-2 h-72 bg-blue-800/50 rounded-2xl overflow-hidden border border-blue-700/50 shadow-inner relative group">
+                                <iframe 
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" 
+                                    width="100%" 
+                                    height="100%" 
+                                    style={{border:0}} 
+                                    allowFullScreen="" 
+                                    loading="lazy" 
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    className="grayscale-[0.3] group-hover:grayscale-0 transition duration-700"
+                                ></iframe>
+                                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs text-primary font-bold shadow-lg pointer-events-none">
+                                    <i className="fas fa-map-marked-alt mr-1"></i> แผนที่โรงเรียน
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="border-t border-blue-800/50 pt-8 relative flex flex-col md:flex-row items-center justify-center">
+                            <p className="text-sm text-blue-300 text-center">
+                                &copy; 2025 {schoolNameEN}. All Rights Reserved.
+                            </p>
+                            
+                            <div 
+                                onClick={onAdminClick} 
+                                className="mt-4 md:mt-0 md:absolute md:right-0 text-blue-400 hover:text-white cursor-pointer transition-all hover:rotate-90 duration-500 p-2"
+                                title="เข้าสู่ระบบผู้ดูแลระบบ"
+                            >
+                                <i className="fas fa-cog text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            );
+        };
+
+        // --- NEW COMPONENT: ListEditor for Multiple Inputs ---
+        const ListEditor = ({ label, items, onChange, icon, placeholderName, placeholderUrl, color = 'blue' }) => {
+            const addItem = () => {
+                onChange([...items, { label: '', url: '' }]);
+            };
+            const updateItem = (idx, field, val) => {
+                const newItems = [...items];
+                newItems[idx][field] = val;
+                onChange(newItems);
+            };
+            const removeItem = (idx) => {
+                onChange(items.filter((_, i) => i !== idx));
+            };
+
+            return (
+                <div className={`bg-${color}-50 p-4 rounded-xl border border-${color}-100`}>
+                    <div className="flex justify-between items-center mb-2">
+                        <label className="text-sm font-bold text-gray-700"><i className={`fas fa-${icon} mr-1`}></i> {label}</label>
+                        <button type="button" onClick={addItem} className={`text-xs bg-${color}-600 text-white px-3 py-1 rounded hover:bg-${color}-700 transition`}>
+                            <i className="fas fa-plus"></i> เพิ่มรายการ
+                        </button>
+                    </div>
+                    <div className="space-y-2">
+                        {items.length === 0 && <div className="text-xs text-gray-400 italic text-center py-2">- ยังไม่มีรายการ -</div>}
+                        {items.map((item, i) => (
+                            <div key={i} className="flex gap-2 items-start animate-fadeIn">
+                                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <input 
+                                        className="w-full border p-2 rounded text-sm" 
+                                        placeholder={placeholderName || "ชื่อปุ่ม"}
+                                        value={item.label}
+                                        onChange={(e) => updateItem(i, 'label', e.target.value)}
+                                    />
+                                    <input 
+                                        className="w-full border p-2 rounded text-sm font-mono" 
+                                        placeholder={placeholderUrl || "https://..."}
+                                        value={item.url}
+                                        onChange={(e) => updateItem(i, 'url', e.target.value)}
+                                    />
+                                </div>
+                                <button type="button" onClick={() => removeItem(i)} className="p-2 text-red-500 hover:text-red-700 bg-white border border-red-100 rounded">
+                                    <i className="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const AdminPanel = ({ data, reload, onLogout }) => {
-            const [tab, setTab] = useState('News');
+            const [tab, setTab] = useState(() => {
+                return sessionStorage.getItem('phukham_admin_tab') || 'News';
+            });
+
+            useEffect(() => {
+                sessionStorage.setItem('phukham_admin_tab', tab);
+            }, [tab]);
+
             const [editItem, setEditItem] = useState(null);
             const [form, setForm] = useState({});
             
+            // State for Multi Lists
+            const [tempAttachments, setTempAttachments] = useState([]);
+            const [tempLinks, setTempLinks] = useState([]);
+
             const [settingsForm, setSettingsForm] = useState({ 
                 SchoolLogo: '', 
                 SchoolName: '',
+                SchoolNameEN: '',
                 SchoolAddress: '',
                 SchoolPhone: '', 
                 FacebookName: '',
                 FacebookURL: ''
             });
 
-            const labelMap = { 'Title': 'หัวข้อ / ชื่อ', 'Content': 'เนื้อหา (HTML/Embed)', 'ImageURL': 'ลิงก์รูปภาพ (URL)', 'Category': 'หมวดหมู่', 'Name': 'ชื่อ-นามสกุล', 'Position': 'ตำแหน่ง', 'Group': 'กลุ่มสาระ / ฝ่าย', 'Caption': 'คำบรรยายภาพ', 'Active': 'แสดงผล (TRUE/FALSE)', 'Value': 'ค่าที่กำหนด', 'Label': 'ชื่อเมนู', 'Type': 'ประเภทเมนู', 'ID': 'รหัสอ้างอิง', 'PageKey': 'รหัสหน้า', 'MenuCategory': 'แสดงในเมนูหลัก', 'Order': 'ลำดับการแสดงผล' };
+            const labelMap = { 
+                'Title': 'หัวข้อ / ชื่อ', 
+                'Content': 'เนื้อหา (HTML/Embed)', 
+                'ImageURL': 'ลิงก์รูปภาพ (URL)', 
+                'PDF_URL': 'ลิ้งก์ PDF หลัก (แบบเดี่ยว)',
+                'Link_URL': 'ลิงก์ปุ่มกดหลัก (แบบเดี่ยว)',
+                'Link_Label': 'ข้อความบนปุ่มกดหลัก',
+                'Category': 'หมวดหมู่', 
+                'Name': 'ชื่อ-นามสกุล', 
+                'Position': 'ตำแหน่ง', 
+                'Group': 'กลุ่มสาระ / ฝ่าย', 
+                'Caption': 'คำบรรยายภาพ', 
+                'Active': 'แสดงผล (TRUE/FALSE)', 
+                'Value': 'ค่าที่กำหนด', 
+                'Label': 'ชื่อเมนู', 
+                'Type': 'ประเภทเมนู', 
+                'ID': 'รหัสอ้างอิง', 
+                'PageKey': 'รหัสหน้า', 
+                'MenuCategory': 'แสดงในเมนูหลัก', 
+                'Order': 'ลำดับการแสดงผล' 
+            };
             const getLabel = (key) => labelMap[key] || key;
             
             const imageHints = {
                 'Banners': 'แนะนำ 1920 x 800 px (แนวนอน)',
                 'Newsletters': 'แนะนำ 1414 x 2000 px (แนวตั้ง A4)',
-                'News': 'แนะนำ 1280 x 720 px (แนวนอน 16:9)',
+                'News': 'แนะนำ 1920 x 1080 px (16:9) หรือตามความเหมาะสม',
                 'Personnel': 'แนะนำ 500 x 500 px (สี่เหลี่ยมจัตุรัส)',
-                'Pages': 'แนะนำ 1280 x 720 px หรือตามความเหมาะสม'
+                'Pages': 'แนะนำ 2000 x 1414 px (แนวนอน A4) หรือตามความเหมาะสม',
+                'Menus': 'แนะนำ 1280 x 720 px (สำหรับ Header หน้า Page)'
             };
 
             const handleAddNew = () => {
                 setEditItem({ _isNew: true });
                 setForm({ Active: 'TRUE' }); 
+                setTempAttachments([]);
+                setTempLinks([]);
             };
 
             const handleEdit = (item) => {
                 setEditItem(item);
-                setForm({ ...item });
+                let initialForm = { ...item };
+
+                if (tab === 'Menus' && item.Type === 'page') {
+                    const linkedPage = data.Pages.find(p => p.MenuCategory === item.ID);
+                    if (linkedPage) {
+                        initialForm = {
+                            ...initialForm,
+                            _pageKey: linkedPage.PageKey,
+                            _pageTitle: linkedPage.Title,
+                            _pageContent: linkedPage.Content,
+                            _pageImage: linkedPage.ImageURL
+                        };
+                    } else {
+                        initialForm = {
+                            ...initialForm,
+                            _pageTitle: item.Label,
+                            _pageContent: '',
+                            _pageImage: ''
+                        };
+                    }
+                }
+                
+                // Load Multi Data
+                if (tab === 'News') {
+                    setTempAttachments(safeJsonParse(item.Multi_Attachments));
+                    setTempLinks(safeJsonParse(item.Multi_Links));
+                }
+
+                setForm(initialForm);
             };
 
             const handleSave = async (e) => { 
                 e.preventDefault(); 
                 if(!confirm('ยืนยันการบันทึก?')) return; 
                 
-                if (tab === 'Settings') { 
-                    const updates = [
-                        { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo },
-                        { Key: 'SchoolName', Value: settingsForm.SchoolName },
-                        { Key: 'SchoolAddress', Value: settingsForm.SchoolAddress },
-                        { Key: 'SchoolPhone', Value: settingsForm.SchoolPhone },
-                        { Key: 'FacebookName', Value: settingsForm.FacebookName },
-                        { Key: 'FacebookURL', Value: settingsForm.FacebookURL }
-                    ];
+                try {
+                    if (tab === 'Settings') { 
+                        const updates = [
+                            { Key: 'SchoolLogo', Value: settingsForm.SchoolLogo },
+                            { Key: 'SchoolName', Value: settingsForm.SchoolName },
+                            { Key: 'SchoolNameEN', Value: settingsForm.SchoolNameEN },
+                            { Key: 'SchoolAddress', Value: settingsForm.SchoolAddress },
+                            { Key: 'SchoolPhone', Value: settingsForm.SchoolPhone },
+                            { Key: 'FacebookName', Value: settingsForm.FacebookName },
+                            { Key: 'FacebookURL', Value: settingsForm.FacebookURL }
+                        ];
 
-                    await Promise.all(updates.map(item => 
-                         api.post({ action: 'save', sheet: 'Config', data: item })
-                    ));
-                    
-                } else { 
-                    const idToUse = editItem._isNew ? form.ID : (editItem.ID || editItem.PageKey);
-                    let payload = { ...form, ID: idToUse };
-                    if (tab === 'Pages') { payload.PageKey = idToUse; }
-                    
-                    if (tab === 'News' && !payload.Date) {
-                        payload.Date = new Date();
-                    }
+                        await Promise.all(updates.map(item => 
+                             api.post({ action: 'save', sheet: 'Config', data: item })
+                        ));
+                        
+                    } else if (tab === 'Menus') {
+                        const menuPayload = {
+                            ID: editItem._isNew ? form.ID : form.ID,
+                            Label: form.Label,
+                            Type: form.Type,
+                            Order: form.Order
+                        };
+                        await api.post({ action: 'save', sheet: 'Menus', data: menuPayload });
 
-                    await api.post({ action: 'save', sheet: tab, data: payload }); 
-                } 
-                alert('บันทึกเรียบร้อย'); 
-                setEditItem(null); 
-                setForm({}); 
-                reload(); 
+                        if (form.Type === 'page') {
+                            const pagePayload = {
+                                PageKey: form._pageKey || ('page_' + Date.now()), 
+                                Title: form._pageTitle || form.Label,
+                                Content: form._pageContent || '',
+                                ImageURL: form._pageImage || '',
+                                MenuCategory: form.ID, 
+                                Order: 1
+                            };
+                            await api.post({ action: 'save', sheet: 'Pages', data: pagePayload });
+                        }
+
+                    } else { 
+                        const idToUse = editItem._isNew ? form.ID : (editItem.ID || editItem.PageKey);
+                        let payload = { ...form, ID: idToUse };
+                        if (tab === 'Pages') { payload.PageKey = idToUse; }
+                        
+                        if (tab === 'News') {
+                            if (!payload.Date) payload.Date = new Date();
+                            // Inject Multi Data
+                            payload.Multi_Attachments = JSON.stringify(tempAttachments);
+                            payload.Multi_Links = JSON.stringify(tempLinks);
+                        }
+
+                        await api.post({ action: 'save', sheet: tab, data: payload }); 
+                    } 
+                    
+                    alert('บันทึกเรียบร้อย'); 
+                    setEditItem(null); 
+                    setForm({}); 
+                    reload(); 
+                } catch (err) {
+                    alert('เกิดข้อผิดพลาด: ' + err.toString());
+                }
             };
 
             const handleDelete = async (id) => { 
-                if(confirm('ยืนยันการลบรายการนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) { 
-                    await api.post({ action: 'delete', sheet: tab, id }); 
-                    alert('ลบข้อมูลเรียบร้อย');
-                    setEditItem(null); 
-                    reload(); 
+                let confirmMessage = 'ยืนยันการลบรายการนี้? การกระทำนี้ไม่สามารถย้อนกลับได้';
+                let relatedPagesToDelete = [];
+
+                if (tab === 'Menus') {
+                    const menuItem = data.Menus.find(m => m.ID === id);
+                    if (menuItem && menuItem.Type !== 'link') {
+                        relatedPagesToDelete = data.Pages.filter(p => p.MenuCategory === id);
+                        if (relatedPagesToDelete.length > 0) {
+                            confirmMessage = `คำเตือน! เมนูนี้มีเนื้อหาหน้าย่อย ${relatedPagesToDelete.length} รายการ\nหากลบเมนูนี้ เนื้อหาทั้งหมดจะถูกลบไปด้วย\n\nยืนยันการลบทั้งหมดหรือไม่?`;
+                        }
+                    }
+                }
+
+                if(confirm(confirmMessage)) { 
+                    try {
+                        if (relatedPagesToDelete.length > 0) {
+                            for (const page of relatedPagesToDelete) {
+                                await api.post({ action: 'delete', sheet: 'Pages', id: page.PageKey });
+                            }
+                        }
+                        await api.post({ action: 'delete', sheet: tab, id }); 
+                        alert('ลบข้อมูลเรียบร้อย');
+                        setEditItem(null); 
+                        reload(); 
+                    } catch (err) {
+                        alert('เกิดข้อผิดพลาดในการลบ: ' + err.toString());
+                    }
                 } 
             };
             
@@ -504,6 +930,7 @@
                 setSettingsForm({ 
                     SchoolLogo: getConfig('SchoolLogo'), 
                     SchoolName: getConfig('SchoolName'),
+                    SchoolNameEN: getConfig('SchoolNameEN'), 
                     SchoolAddress: getConfig('SchoolAddress'),
                     SchoolPhone: getConfig('SchoolPhone'),
                     FacebookName: getConfig('FacebookName'),
@@ -513,7 +940,18 @@
             }
             
             const menuTabs = { 'News':'ข่าวประชาสัมพันธ์', 'Newsletters': 'จดหมายข่าว', 'Personnel':'บุคลากร', 'Banners':'สไลด์', 'Pages':'เนื้อหาหน้าย่อย', 'Menus':'เมนูหลัก', 'Settings':'ระบบ' };
-            const getGroupedPages = () => { if (tab !== 'Pages') return null; const groups = {}; data.Menus.filter(m => m.Type === 'dropdown').forEach(m => groups[m.ID] = { label: m.Label, items: [] }); groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] }; data.Pages.forEach(p => { if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p); else groups['other'].items.push(p); }); return groups; };
+            
+            const getGroupedPages = () => { 
+                if (tab !== 'Pages') return null; 
+                const groups = {}; 
+                data.Menus.filter(m => m.Type === 'dropdown' || m.Type === 'page').forEach(m => groups[m.ID] = { label: `${m.Label} (${m.Type})`, items: [] }); 
+                groups['other'] = { label: 'หน้าลอย / ไม่ระบุหมวดหมู่', items: [] }; 
+                data.Pages.forEach(p => { 
+                    if (p.MenuCategory && groups[p.MenuCategory]) groups[p.MenuCategory].items.push(p); 
+                    else groups['other'].items.push(p); 
+                }); 
+                return groups; 
+            };
 
             const getSortedAdminData = (items) => {
                 if(!items) return [];
@@ -539,19 +977,12 @@
                 return '';
             }
 
-            // ฟังก์ชันแทรกลิ้งก์ใน Admin
-            const insertLinkToContent = () => {
+            const insertLinkToContent = (fieldName = 'Content') => {
                 const url = prompt("ใส่ URL ที่ต้องการ (เช่น https://google.com):");
                 if (!url) return;
                 const text = prompt("ข้อความที่จะแสดง (ถ้าไม่ใส่จะใช้ URL):", url);
-                
                 const linkHtml = `<a href="${url}" target="_blank" style="color:#2563eb; text-decoration:underline;">${text || url}</a>`;
-                
-                // ต่อ String ไปดื้อๆ ที่ด้านหลัง (หรือตำแหน่งเคอร์เซอร์ถ้าทำได้ แต่วิธีนี้ง่ายสุดสำหรับ React state)
-                setForm(prev => ({
-                    ...prev,
-                    Content: (prev.Content || "") + " " + linkHtml
-                }));
+                setForm(prev => ({ ...prev, [fieldName]: (prev[fieldName] || "") + " " + linkHtml }));
             };
 
             return (
@@ -567,117 +998,156 @@
                         </aside>
                         <main className="flex-1 p-8 overflow-auto">
                             <h2 className="text-2xl font-bold mb-4 text-primary">{menuTabs[tab]}</h2>
-                            
                             {tab !== 'Settings' && (
                                 <div className="bg-blue-50 text-[#003366] p-3 rounded-lg mb-6 text-sm flex items-start gap-2 border border-blue-100 shadow-sm">
                                     <i className="fas fa-sort-amount-down mt-1"></i>
-                                    <div>
-                                        <span className="font-bold">การเรียงลำดับ:</span> {getSortingMessage(tab)}
-                                    </div>
+                                    <div><span className="font-bold">การเรียงลำดับ:</span> {getSortingMessage(tab)}</div>
                                 </div>
                             )}
-
                             {!['Settings'].includes(tab) && !editItem && (
-                                <button onClick={handleAddNew} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6">
-                                    <i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่
-                                </button>
+                                <button onClick={handleAddNew} className="bg-primary text-white px-5 py-2.5 rounded-lg shadow hover:opacity-90 transition flex items-center gap-2 mb-6"><i className="fas fa-plus-circle"></i> เพิ่มข้อมูลใหม่</button>
                             )}
 
                             {editItem && (
                                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
                                     <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-blue-100">
                                         <div className="flex justify-between items-center mb-6">
-                                            <h3 className="font-bold text-xl text-primary">
-                                                {tab==='Settings' ? 'ตั้งค่าระบบ' : (editItem._isNew ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล')}
-                                            </h3>
+                                            <h3 className="font-bold text-xl text-primary">{tab==='Settings' ? 'ตั้งค่าระบบ' : (editItem._isNew ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล')}</h3>
                                             <button onClick={()=>setEditItem(null)} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times text-xl"></i></button>
                                         </div>
                                         <form onSubmit={handleSave} className="grid gap-5">
                                             {tab === 'Settings' && <>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
-                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">เบอร์โทรศัพท์</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolPhone} onChange={e=>setSettingsForm({...settingsForm, SchoolPhone: e.target.value})} placeholder="เช่น 056-792781" /></div>
+                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน (TH)</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolName} onChange={e=>setSettingsForm({...settingsForm, SchoolName: e.target.value})} /></div>
+                                                    <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อโรงเรียน (EN)</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolNameEN} onChange={e=>setSettingsForm({...settingsForm, SchoolNameEN: e.target.value})} placeholder="Phukhamkrutmaneeuthit School" /></div>
                                                 </div>
-                                                
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">เบอร์โทรศัพท์</label><input className="w-full border p-3 rounded-lg" value={settingsForm.SchoolPhone} onChange={e=>setSettingsForm({...settingsForm, SchoolPhone: e.target.value})} placeholder="เช่น 056-792781" /></div>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">ที่อยู่</label><textarea rows="3" className="w-full border p-3 rounded-lg" value={settingsForm.SchoolAddress} onChange={e=>setSettingsForm({...settingsForm, SchoolAddress: e.target.value})} placeholder="ใส่ที่อยู่โรงเรียน..."></textarea></div>
-
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อ Facebook</label><input className="w-full border p-3 rounded-lg" value={settingsForm.FacebookName} onChange={e=>setSettingsForm({...settingsForm, FacebookName: e.target.value})} placeholder="เช่น โรงเรียนพุขาม..." /></div>
                                                     <div><label className="text-sm font-bold text-gray-600 mb-1 block">URL Facebook</label><input className="w-full border p-3 rounded-lg" value={settingsForm.FacebookURL} onChange={e=>setSettingsForm({...settingsForm, FacebookURL: e.target.value})} placeholder="https://facebook.com/..." /></div>
                                                 </div>
-
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้ <span className="text-blue-500 font-normal text-xs ml-1">(แนะนำ 512x512 px)</span></label><input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />{settingsForm.SchoolLogo && <img src={settingsForm.SchoolLogo} className="h-16 mt-2 border p-1 rounded" />}</div>
+                                                <div>
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">URL รูปภาพโลโก้ <span className="text-blue-500 font-normal text-xs ml-1">(แนะนำ 512x512 px หรือลิ้งก์ Google Drive)</span></label>
+                                                    <input className="w-full border p-3 rounded-lg bg-gray-50" value={settingsForm.SchoolLogo} onChange={e=>setSettingsForm({...settingsForm, SchoolLogo: e.target.value})} />
+                                                    {settingsForm.SchoolLogo && (
+                                                        <img src={getCleanImageUrl(settingsForm.SchoolLogo)} className="h-16 mt-2 border p-1 rounded" onError={(e)=>e.target.style.display='none'}/>
+                                                    )}
+                                                </div>
                                             </>} 
-                                            
                                             {tab !== 'Settings' && (
                                                 <div>
                                                     <label className="text-sm font-bold text-gray-600 mb-1 block">ลำดับการแสดงผล (ตัวเลข)</label>
                                                     <input type="number" className="w-full border p-3 rounded-lg" value={form.Order||''} onChange={e=>setForm({...form, Order: e.target.value})} placeholder="ใส่ตัวเลข เช่น 10, 9, 8..." />
-                                                    <p className="text-sm text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded border border-blue-100 flex items-center gap-2">
-                                                        <i className="fas fa-info-circle"></i> 
-                                                        {isDescendingTab 
-                                                            ? "ใส่ตัวเลขมาก = แสดงก่อน (เรียงจาก มาก -> น้อย)" 
-                                                            : "ใส่ตัวเลขน้อย = แสดงก่อน (เรียงจาก น้อย -> มาก, เช่น 1, 2, 3...)"
-                                                        }
-                                                    </p>
                                                 </div>
                                             )}
-
                                             {tab === 'Menus' && <>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label>
-                                                    <input className="w-full border p-3 rounded-lg bg-gray-50 disabled:text-gray-400" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={!editItem._isNew} placeholder="เช่น menu_about (ภาษาอังกฤษเท่านั้น)" />
-                                                </div>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ID (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg bg-gray-50 disabled:text-gray-400" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} disabled={!editItem._isNew} placeholder="เช่น menu_about" /></div>
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">ชื่อเมนู</label><input className="w-full border p-3 rounded-lg" value={form.Label||''} onChange={e=>setForm({...form, Label: e.target.value})} /></div>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label><select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}><option value="link">Link</option><option value="dropdown">Dropdown</option></select></div>
-                                            </>} 
-                                            
-                                            {tab === 'News' && <>
                                                 <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อข่าว</label>
-                                                    <input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่หัวข้อข่าวที่นี่..." />
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">ประเภท</label>
+                                                    <select className="w-full border p-3 rounded-lg" value={form.Type||'link'} onChange={e=>setForm({...form, Type: e.target.value})}>
+                                                        <option value="link">Link (กดแล้วไปหน้าแรก/หน้าอื่น)</option>
+                                                        <option value="dropdown">Dropdown (มีเมนูย่อย)</option>
+                                                        <option value="page">Page (หน้าเนื้อหาเดี่ยว)</option>
+                                                    </select>
                                                 </div>
-                                                <div>
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <label className="text-sm font-bold text-gray-600 block">เนื้อหา</label>
-                                                        <button type="button" onClick={insertLinkToContent} className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold flex items-center gap-1"><i className="fas fa-link"></i> แทรกลิ้งก์</button>
+
+                                                {form.Type === 'page' && (
+                                                    <div className="mt-4 border-t-2 border-blue-100 pt-6 animate-fadeIn bg-blue-50 p-4 rounded-xl">
+                                                        <h4 className="text-primary font-bold text-lg mb-4 flex items-center gap-2"><i className="fas fa-file-alt"></i> จัดการเนื้อหาของหน้านี้</h4>
+                                                        
+                                                        <div className="space-y-4">
+                                                            <div>
+                                                                <label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อในหน้าเนื้อหา</label>
+                                                                <input className="w-full border p-3 rounded-lg bg-white" value={form._pageTitle||''} onChange={e=>setForm({...form, _pageTitle: e.target.value})} placeholder="เช่น ประวัติโรงเรียน (ถ้าไม่ใส่จะใช้ชื่อเมนู)" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm font-bold text-gray-600 mb-1 block">รูปภาพหัวเรื่อง (URL)</label>
+                                                                <input className="w-full border p-3 rounded-lg bg-white" value={form._pageImage||''} onChange={e=>setForm({...form, _pageImage: e.target.value})} placeholder="URL รูปภาพ (ถ้ามี)" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <label className="text-sm font-bold text-gray-600 block">รายละเอียดเนื้อหา</label>
+                                                                    <button type="button" onClick={() => insertLinkToContent('_pageContent')} className="text-xs bg-white text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold flex items-center gap-1"><i className="fas fa-link"></i> แทรกลิ้งก์</button>
+                                                                </div>
+                                                                <textarea className="w-full border p-3 rounded-lg h-64 font-mono text-sm bg-white" value={form._pageContent||''} onChange={e=>setForm({...form, _pageContent: e.target.value})} placeholder="ใส่เนื้อหา หรือ HTML Code ที่นี่..."></textarea>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form.Content||''} onChange={e=>setForm({...form, Content: e.target.value})} placeholder="ใส่เนื้อหาข่าว หรือ HTML..."></textarea>
+                                                )}
+                                            </>} 
+                                            {tab === 'News' && <>
+                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อข่าว</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่หัวข้อข่าวที่นี่..." /></div>
+                                                
+                                                {/* ---- NEW MULTI LISTS ---- */}
+                                                <div className="space-y-4 border-l-4 border-blue-200 pl-4 py-2">
+                                                    <ListEditor 
+                                                        label="รายการเอกสาร PDF (แนบหลายไฟล์)" 
+                                                        icon="file-pdf"
+                                                        items={tempAttachments} 
+                                                        onChange={setTempAttachments}
+                                                        placeholderName="ชื่อเอกสาร (เช่น กำหนดการ)"
+                                                        placeholderUrl="Link Google Drive / PDF"
+                                                        color="red"
+                                                    />
+                                                    
+                                                    <ListEditor 
+                                                        label="รายการลิงก์ภายนอก (แนบหลายลิงก์)" 
+                                                        icon="link"
+                                                        items={tempLinks} 
+                                                        onChange={setTempLinks}
+                                                        placeholderName="ข้อความปุ่ม (เช่น สมัครเรียนคลิก)"
+                                                        placeholderUrl="https://..."
+                                                        color="green"
+                                                    />
                                                 </div>
+                                                
+                                                {/* Hide Legacy inputs in a collapsed detail or just keep them as optional fallbacks */}
+                                                <details className="bg-gray-100 p-3 rounded-lg">
+                                                    <summary className="cursor-pointer text-xs font-bold text-gray-500 hover:text-gray-700">แสดงช่องกรอกแบบเก่า (Single Field)</summary>
+                                                    <div className="mt-3 space-y-3">
+                                                        <div>
+                                                            <label className="text-sm font-bold text-gray-400 mb-1 block">ลิ้งก์ PDF หลัก (แบบเก่า)</label>
+                                                            <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.PDF_URL||''} onChange={e=>setForm({...form, PDF_URL: e.target.value})} />
+                                                        </div>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                            <div>
+                                                                <label className="text-sm font-bold text-gray-400 mb-1 block">ลิงก์ปุ่มกดหลัก (แบบเก่า)</label>
+                                                                <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.Link_URL||''} onChange={e=>setForm({...form, Link_URL: e.target.value})} />
+                                                            </div>
+                                                            <div>
+                                                                <label className="text-sm font-bold text-gray-400 mb-1 block">ข้อความปุ่ม (แบบเก่า)</label>
+                                                                <input className="w-full border p-2 rounded-lg text-sm bg-white" value={form.Link_Label||''} onChange={e=>setForm({...form, Link_Label: e.target.value})} />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </details>
+
+                                                <div><div className="flex justify-between items-center mb-1"><label className="text-sm font-bold text-gray-600 block">เนื้อหา</label><button type="button" onClick={() => insertLinkToContent('Content')} className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-100 font-bold flex items-center gap-1"><i className="fas fa-link"></i> แทรกลิ้งก์</button></div><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form.Content||''} onChange={e=>setForm({...form, Content: e.target.value})} placeholder="ใส่เนื้อหาข่าว หรือ HTML..."></textarea></div>
                                             </>}
-
-                                            {tab === 'Newsletters' && (
-                                                <div>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อจดหมายข่าว</label>
-                                                    <input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่ชื่อจดหมายข่าว (เช่น ปีที่ 1 ฉบับที่ 1)" />
-                                                </div>
-                                            )}
-
+                                            {tab === 'Newsletters' && (<div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อจดหมายข่าว</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} placeholder="ใส่ชื่อจดหมายข่าว" /></div>)}
                                             {tab === 'Pages' && <>
                                                 {editItem._isNew && <div><label className="text-sm font-bold text-gray-600 mb-1 block">PageKey (ห้ามซ้ำ)</label><input className="w-full border p-3 rounded-lg" value={form.ID||''} onChange={e=>setForm({...form, ID: e.target.value})} placeholder="เช่น page_history" /></div>}
                                                 <div><label className="text-sm font-bold text-gray-600 mb-1 block">หัวข้อหน้า</label><input className="w-full border p-3 rounded-lg" value={form.Title||''} onChange={e=>setForm({...form, Title: e.target.value})} /></div>
-                                                <div><label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก</label><select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}><option value="">-- ไม่แสดงในเมนู --</option>{data.Menus.filter(m=>m.Type==='dropdown').map(m => <option key={m.ID} value={m.ID}>{m.Label}</option>)}</select></div>
+                                                <div>
+                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">เมนูหลัก (เชื่อมโยง)</label>
+                                                    <select className="w-full border p-3 rounded-lg" value={form.MenuCategory||''} onChange={e=>setForm({...form, MenuCategory: e.target.value})}>
+                                                        <option value="">-- ไม่แสดงในเมนู --</option>
+                                                        {data.Menus.filter(m=>m.Type==='dropdown' || m.Type==='page').map(m => (
+                                                            <option key={m.ID} value={m.ID}>{m.Label} {m.Type === 'page' ? '(Page)' : ''}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
                                             </>} 
                                             
                                             {Object.keys(tab === 'Settings' ? {} : (editItem._isNew ? (data[tab][0] || {}) : editItem)).map(k => { 
-                                                if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings'].includes(k)) return null; 
-                                                if(tab === 'News' && k === 'Content') return null;
-                                                return <div key={k}>
-                                                    <label className="text-sm font-bold text-gray-600 mb-1 block">
-                                                        {getLabel(k)}
-                                                        {k === 'ImageURL' && imageHints[tab] && <span className="text-blue-500 font-normal text-xs ml-2">({imageHints[tab]})</span>}
-                                                    </label>
-                                                    {k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}
-                                                </div> 
+                                                if(['ID','Date','PageKey','Key','MenuCategory','Title','Label','Type','Order','_isNew','settings','Multi_Attachments','Multi_Links'].includes(k)) return null; 
+                                                if(k.startsWith('_page')) return null; 
+                                                if(tab === 'News' && (k === 'Content' || k === 'PDF_URL' || k === 'Link_URL' || k === 'Link_Label')) return null; 
+                                                return <div key={k}><label className="text-sm font-bold text-gray-600 mb-1 block">{getLabel(k)}{k === 'ImageURL' && imageHints[tab] && <span className="text-blue-500 font-normal text-xs ml-2">({imageHints[tab]})</span>}</label>{k === 'Content' ? <div className="space-y-1"><textarea className="w-full border p-3 rounded-lg h-48 font-mono text-sm" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} placeholder="ใส่ข้อความ หรือ HTML"></textarea></div> : <input className="w-full border p-3 rounded-lg" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} />}</div> 
                                             })}
-                                            
-                                            <div className="flex gap-4">
-                                                <button type="submit" className="flex-1 bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button>
-                                                {!editItem._isNew && tab !== 'Settings' && (
-                                                    <button type="button" onClick={() => handleDelete(editItem.ID || editItem.PageKey)} className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition">
-                                                        <i className="fas fa-trash-alt mr-2"></i> ลบข้อมูล
-                                                    </button>
-                                                )}
-                                            </div>
+                                            <div className="flex gap-4"><button type="submit" className="flex-1 bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition">บันทึกข้อมูล</button>{!editItem._isNew && tab !== 'Settings' && (<button type="button" onClick={() => handleDelete(editItem.ID || editItem.PageKey)} className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold shadow hover:bg-red-600 transition"><i className="fas fa-trash-alt mr-2"></i> ลบข้อมูล</button>)}</div>
                                         </form>
                                     </div>
                                 </div>
@@ -686,7 +1156,8 @@
                             {tab !== 'Settings' && !editItem && (<div className="space-y-6">
                                 {tab === 'Pages' ? (Object.entries(getGroupedPages()).map(([key, group]) => (group.items.length > 0 && (<div key={key} className="bg-white rounded-xl border border-gray-200 overflow-hidden"><div className="bg-gray-100 px-5 py-3 font-bold text-gray-700 border-b flex justify-between"><span>{group.label}</span><span className="text-xs bg-gray-200 px-2 py-1 rounded text-gray-500">{group.items.length} รายการ</span></div><div className="divide-y">{group.items.map((item, i) => (<div key={i} className="p-4 flex justify-between items-center hover:bg-blue-50 transition"><div className="font-bold text-slate-800">{item.Title}</div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div></div>)))) 
                                 : 
-                                (<div className="grid gap-3">{getSortedAdminData(data[tab]).map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && <img src={getCleanImageUrl(item.ImageURL.split(',')[0])} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Order ? `ลำดับ: ${item.Order} | ` : ''}{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}
+                                (<div className="grid gap-3">{getSortedAdminData(data[tab]).map((item,i) => (<div key={i} className="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:shadow-md transition"><div className="flex items-center gap-4">{item.ImageURL && 
+                                    <img src={getCleanImageUrl(item.ImageURL.split(',')[0])} className="w-12 h-12 rounded-lg object-cover bg-gray-100" />}<div><div className="font-bold">{item.Title || item.Name || item.Caption || item.Label}</div><div className="text-xs text-gray-400">{item.Order ? `ลำดับ: ${item.Order} | ` : ''}{item.Category || item.MenuCategory || item.PageKey}</div></div></div><div className="flex items-center gap-2"><button onClick={()=>handleEdit(item)} className="text-blue-500 hover:text-blue-700 px-2"><i className="fas fa-edit fa-lg"></i></button><button onClick={()=>handleDelete(item.ID || item.PageKey)} className="text-red-500 hover:text-red-700 px-2"><i className="fas fa-trash fa-lg"></i></button></div></div>))}</div>)}
                             </div>
                             )}
                         </main>
@@ -696,14 +1167,53 @@
         };
 
         const App = () => {
-            const [page, setPage] = useState(() => {
-                try {
-                    const saved = sessionStorage.getItem('phukham_page_state');
-                    return saved ? JSON.parse(saved) : { id: 'home' };
-                } catch (e) {
-                    return { id: 'home' };
+            // UPDATE: Initialize state from URL logic primarily, fallback to 'home'
+            const [page, _setPage] = useState(() => {
+                const params = new URLSearchParams(window.location.search);
+                const pId = params.get('page');
+                const key = params.get('key');
+                if (pId) {
+                    return { id: pId, key: key };
                 }
+                return { id: 'home' };
             });
+
+            // UPDATE: Wrapper function to handle history pushState
+            const setPage = (newPage) => {
+                _setPage(newPage);
+                const params = new URLSearchParams();
+                if (newPage.id) params.set('page', newPage.id);
+                if (newPage.key) params.set('key', newPage.key);
+                
+                // Construct new URL
+                const newUrl = `${window.location.pathname}?${params.toString()}`;
+                
+                // Push state to history. We store the full object 'newPage' in state
+                // so we can retrieve complex data (like 'item') when user clicks Back.
+                window.history.pushState(newPage, '', newUrl);
+            };
+
+            // UPDATE: Effect to handle Browser Back/Forward buttons
+            useEffect(() => {
+                const onPopState = (event) => {
+                    if (event.state) {
+                        _setPage(event.state);
+                    } else {
+                        // Fallback parsing if state is empty (e.g. manual URL change)
+                        const params = new URLSearchParams(window.location.search);
+                        const pId = params.get('page') || 'home';
+                        const key = params.get('key');
+                        _setPage({ id: pId, key: key });
+                    }
+                };
+                window.addEventListener('popstate', onPopState);
+                return () => window.removeEventListener('popstate', onPopState);
+            }, []);
+
+            // === UPDATE: SCROLL TO TOP ON PAGE CHANGE ===
+            useEffect(() => {
+                window.scrollTo(0, 0);
+            }, [page]);
 
             const [data, setData] = useState(null);
             const [isAdmin, setIsAdmin] = useState(false);
@@ -711,9 +1221,10 @@
             const [user, setUser] = useState('');
             const [pass, setPass] = useState('');
 
-            useEffect(() => {
-                sessionStorage.setItem('phukham_page_state', JSON.stringify(page));
-            }, [page]);
+            // UPDATE: Removed session storage sync for page state as we now use URL/History API
+            // useEffect(() => {
+            //     sessionStorage.setItem('phukham_page_state', JSON.stringify(page));
+            // }, [page]);
 
             const load = async () => {
                 const cached = localStorage.getItem('phukhamData');
@@ -763,6 +1274,7 @@
             const getConfig = (key) => data.Config?.find(c => c.Key === key)?.Value || '';
             const logoUrl = getConfig('SchoolLogo');
             const schoolName = getConfig('SchoolName') || 'โรงเรียนพุขามครุฑมณีอุทิศ';
+            const schoolNameEN = getConfig('SchoolNameEN');
             const schoolAddress = getConfig('SchoolAddress');
             const schoolPhone = getConfig('SchoolPhone') || '056-792781';
             const fbName = getConfig('FacebookName');
@@ -775,11 +1287,14 @@
             
             const sortedPersonnel = [...data.Personnel].sort((a,b) => Number(a.Order||0) - Number(b.Order||0));
 
+            // UPDATE: Prepare Default Banner
+            const defaultNewsBanner = data.Bannersnews && data.Bannersnews.length > 0 ? data.Bannersnews[0].Banners : '';
+
             return (
                 <div className="min-h-screen flex flex-col font-sarabun bg-slate-50 relative w-full">
                     {isAdmin ? <AdminPanel data={data} reload={load} onLogout={handleLogout} onClose={()=>handleLogout()} /> : (
                         <>
-                            <Navbar setPage={setPage} logoUrl={logoUrl} schoolName={schoolName} pages={data.Pages} mainMenus={data.Menus} />
+                            <Navbar setPage={setPage} logoUrl={logoUrl} schoolName={schoolName} schoolNameEN={schoolNameEN} pages={data.Pages} mainMenus={data.Menus} />
                             <main className="flex-grow w-full bg-white">
                                 {page.id === 'home' && (
                                     <>
@@ -794,14 +1309,26 @@
                                             </div>
                                             <div className="grid md:grid-cols-3 gap-8">
                                                 {sortedNews.slice(0,3).map((n,i)=>(
-                                                    <NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />
+                                                    <NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', key: n.ID, item: n})} defaultBanner={defaultNewsBanner} />
                                                 ))}
                                             </div>
                                         </div>
                                     </>
                                 )}
-                                {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', item: n})} />))}</div></div>}
-                                {page.id === 'news_detail' && <NewsDetail item={page.item} onBack={()=>setPage({id: 'news'})} />}
+                                {page.id === 'news' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-10 text-primary">ข่าวสารทั้งหมด</h2><div className="grid md:grid-cols-3 gap-8">{sortedNews.map((n,i)=>(<NewsCard key={i} n={n} onClick={()=>setPage({id:'news_detail', key: n.ID, item: n})} defaultBanner={defaultNewsBanner} />))}</div></div>}
+                                {page.id === 'news_detail' && (
+                                    (() => {
+                                        // Try to get item from state, OR find it in data using key from URL (Fix for Refresh)
+                                        const newsItem = page.item || (data && data.News && page.key ? data.News.find(n => n.ID == page.key) : null);
+                                        
+                                        if (newsItem) {
+                                            return <NewsDetail item={newsItem} onBack={()=>setPage({id: 'news'})} />;
+                                        } else {
+                                            return <div className="p-12 text-center text-gray-500">กำลังโหลดข้อมูล หรือไม่พบข้อมูลข่าว... <br/>(หากรอนานกรุณากดรีเฟรช หรือกลับไปหน้าข่าวประชาสัมพันธ์)</div>;
+                                        }
+                                    })()
+                                )}
+
                                 {page.id === 'page' && <div className="content-container py-12"><div className="bg-white p-12 rounded-3xl shadow-lg border border-gray-100 fade-in min-h-[600px]">{(() => { const p = data.Pages.find(x => x.PageKey === page.key) || {}; 
                                     const pageImages = p.ImageURL ? p.ImageURL.split(',').map(url => url.trim()).filter(url => url) : [];
                                     return (
@@ -823,41 +1350,20 @@
                                         </>
                                     ); 
                                 })()}</div></div>}
-                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2"><img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
-                                {page.id === 'contact' && <div className="content-container py-12"><div className="bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[600px]">
-                                    <div className="md:w-1/3 bg-primary p-12 text-white flex flex-col justify-center">
-                                        <h2 className="text-3xl font-bold mb-8">ติดต่อเรา</h2>
-                                        <ul className="space-y-6 text-white/90 text-lg">
-                                            <li className="flex items-start gap-4">
-                                                <i className="fas fa-school mt-1 text-blue-300"></i> 
-                                                <div>
-                                                    <div className="font-bold text-xl mb-1">{schoolName}</div>
-                                                    {schoolAddress && <div className="text-base text-blue-100 font-light leading-relaxed">{schoolAddress}</div>}
-                                                </div>
-                                            </li>
-                                            <li className="flex items-center gap-4">
-                                                <i className="fas fa-phone text-blue-300"></i> โทร: {schoolPhone}
-                                            </li>
-                                            {fbName && fbUrl && (
-                                                <li className="flex items-center gap-4">
-                                                    <i className="fab fa-facebook text-blue-300 text-xl"></i> 
-                                                    <a href={fbUrl} target="_blank" rel="noopener noreferrer" className="hover:text-white hover:underline transition font-bold">{fbName}</a>
-                                                </li>
-                                            )}
-                                        </ul>
-                                    </div>
-                                    <div className="md:w-2/3 h-full"><iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3844.045628445485!2d101.04160677463287!3d15.535684485069131!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x311fb4ed6a487b41%3A0xea5d65ed104867a1!2z4LmC4Lij4LiH4LmA4Lij4Li14Lii4LiZ4Lie4Li44LiC4Liy4Lih4LiE4Lij4Li44LiR4Lih4LiT4Li14Lit4Li44LiX4Li04Lio!5e0!3m2!1sth!2sth!4v1764605736972!5m2!1sth!2sth" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div></div></div>}
+                                {page.id === 'personnel' && <div className="content-container py-12"><h2 className="text-3xl font-bold text-center mb-12 text-primary">บุคลากร</h2><div className="grid grid-cols-1 md:grid-cols-4 gap-8">{sortedPersonnel.map((p,i)=>(<div key={i} className="bg-white p-8 rounded-2xl shadow-sm text-center border hover:shadow-xl transition transform hover:-translate-y-2">
+                                <img src={getCleanImageUrl(p.ImageURL)} className="w-32 h-32 mx-auto rounded-full object-cover mb-4 shadow-md border-4 border-white" onError={(e)=>e.target.src='https://via.placeholder.com/150'} /><h4 className="font-bold text-xl text-primary">{p.Name}</h4><p className="text-slate-500 text-sm font-medium mt-1">{p.Position}</p><span className="text-xs text-primary bg-blue-50 px-3 py-1 rounded-full mt-3 inline-block font-semibold">{p.Group}</span></div>))}</div></div>}
                             </main>
                             
-                            <footer className="bg-primary text-white py-12 mt-auto">
-                                <div className="content-container text-center">
-                                    <h3 className="font-bold text-xl">{schoolName}</h3>
-                                    <p className="text-sm text-blue-200 mt-2">&copy; 2025 All Rights Reserved.</p>
-                                    <div onClick={() => setShowLogin(true)} className="mt-4 text-xs text-blue-400 hover:text-white cursor-pointer transition-colors inline-flex items-center gap-1">
-                                        <i className="fas fa-lock text-[10px]"></i> admin
-                                    </div>
-                                </div>
-                            </footer>
+                            <Footer 
+                                schoolName={schoolName}
+                                schoolNameEN={schoolNameEN}
+                                schoolAddress={schoolAddress}
+                                schoolPhone={schoolPhone}
+                                fbName={fbName}
+                                fbUrl={fbUrl}
+                                logoUrl={logoUrl}
+                                onAdminClick={() => setShowLogin(true)}
+                            />
 
                             {showLogin && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn"><div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 relative"><button onClick={()=>setShowLogin(false)} className="absolute top-4 right-4 text-gray-400 hover:text-red-500"><i className="fas fa-times text-lg"></i></button><div className="text-center mb-6"><div className="w-16 h-16 bg-blue-50 text-[#003366] rounded-full flex items-center justify-center text-2xl mx-auto mb-3"><i className="fas fa-lock"></i></div><h3 className="text-xl font-bold text-primary">เข้าสู่ระบบแอดมิน</h3></div><form onSubmit={handleLogin} className="space-y-4"><div><label className="text-xs font-bold text-gray-400 uppercase">ชื่อผู้ใช้งาน</label><input value={user} onChange={e=>setUser(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-800 outline-none transition" placeholder="Username" /></div><div><label className="text-xs font-bold text-gray-400 uppercase">รหัสผ่าน</label><input type="password" value={pass} onChange={e=>setPass(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-800 outline-none transition" placeholder="Password" /></div><button className="w-full bg-primary text-white py-3 rounded-lg font-bold shadow hover:opacity-90 transition transform active:scale-95">เข้าสู่ระบบ</button></form></div></div>}
                         </>
