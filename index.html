@@ -148,7 +148,7 @@
 </head>
 <body>
 
-    <!-- Ribbon: Corrected URL -->
+    <!-- Ribbon -->
     <img src="https://raw.githubusercontent.com/KongNontawatDev/Black-Mourning-Ribbon/2150640c0e623c7fbcca07024287b597f7999a84/ribbon_top_right.png" 
      alt="Black mourning ribbon for websites, top right corner" 
      style="position:fixed; top:0; right:0; width:70px; opacity:0.9; z-index:9999; pointer-events:none;"
@@ -199,7 +199,6 @@
             if (!url) return '';
             const u = url.trim();
             if (u.includes('drive.google.com')) {
-                // Ensure preview mode is used
                 return u.replace(/\/view.*/, '/preview').replace(/\/open\?id=/, '/file/d/').replace(/\/edit.*/, '/preview');
             }
             return u;
@@ -226,11 +225,17 @@
             return linkedParts.join('');
         };
         
-        // Helper to safely parse JSON from sheet
+        // FIX: Improved JSON Parsing for array data
         const safeJsonParse = (str) => {
+            if (!str) return [];
+            // If it's already an array (rare but possible in some envs), return it
+            if (Array.isArray(str)) return str;
             try {
-                return str ? JSON.parse(str) : [];
+                const parsed = JSON.parse(str);
+                // Ensure result is an array
+                return Array.isArray(parsed) ? parsed : [];
             } catch (e) {
+                // console.warn("Failed to parse JSON:", str);
                 return [];
             }
         };
@@ -366,7 +371,6 @@
                 <div className="w-full max-w-[1920px] mx-auto relative aspect-[1920/800] bg-primary group overflow-hidden">
                     {displayBanners.map((b, i) => (
                         <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === idx ? 'opacity-100' : 'opacity-0'}`}>
-                            {/* REMOVED DARK OVERLAY */}
                             <img src={getCleanImageUrl(b.ImageURL)} className={`slide-image ${i === idx ? 'slide-active' : ''}`} onError={(e)=>{e.target.onerror=null; e.target.src='https://via.placeholder.com/1920x800/003366/ffffff?text=Image+Error';}} />
                         </div>
                     ))}
@@ -464,7 +468,7 @@
             const hasImage = !!item.ImageURL;
             
             // ===============================================
-            // MODIFIED: Use only Multi fields, Remove Legacy
+            // PARSE WITH SAFE LOGIC
             // ===============================================
             const multiAttachments = safeJsonParse(item.Multi_Attachments);
             const multiLinks = safeJsonParse(item.Multi_Links);
@@ -544,18 +548,13 @@
             );
         };
 
-        // UPDATE: NewsCard รับ prop defaultBanner เพิ่ม
         const NewsCard = ({ n, onClick, defaultBanner }) => {
             const hasImage = !!n.ImageURL;
-            // ===============================================
-            // MODIFIED: Check ONLY Multi_Attachments
-            // ===============================================
             const hasPdf = n.Multi_Attachments && safeJsonParse(n.Multi_Attachments).length > 0;
 
             return (
                 <div onClick={onClick} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden h-full flex flex-col group cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition duration-300 transform">
                     <div className="aspect-[16/9] w-full overflow-hidden relative bg-gray-100">
-                         {/* Case 1: Has specific image -> Show it */}
                          {hasImage ? (
                             <>
                                 <img 
@@ -570,15 +569,12 @@
                                 )}
                             </>
                          ) : (
-                            /* Case 2: No Image */
                             hasPdf ? (
-                                /* Case 2a: Has PDF -> Show PDF Placeholder (Original Logic) */
                                 <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 flex-col">
                                     <i className="fas fa-file-pdf text-4xl mb-2 text-red-500"></i>
                                     <span className="text-sm font-bold">เอกสาร PDF</span>
                                 </div>
                             ) : (
-                                /* Case 2b: No Image AND No PDF -> Show Default Banner if available, else White BG */
                                 defaultBanner ? (
                                     <img 
                                         src={getCleanImageUrl(defaultBanner)} 
@@ -672,16 +668,20 @@
             );
         };
 
-        // --- NEW COMPONENT: ListEditor for Multiple Inputs ---
+        // --- FIXED: ListEditor now uses immutable state updates ---
         const ListEditor = ({ label, items, onChange, icon, placeholderName, placeholderUrl, color = 'blue' }) => {
             const addItem = () => {
                 onChange([...items, { label: '', url: '' }]);
             };
+            
+            // FIX: Use map to return new array/object references, ensuring React detects change
             const updateItem = (idx, field, val) => {
-                const newItems = [...items];
-                newItems[idx][field] = val;
+                const newItems = items.map((item, i) => 
+                    i === idx ? { ...item, [field]: val } : item
+                );
                 onChange(newItems);
             };
+
             const removeItem = (idx) => {
                 onChange(items.filter((_, i) => i !== idx));
             };
@@ -752,7 +752,6 @@
                 'Title': 'หัวข้อ / ชื่อ', 
                 'Content': 'เนื้อหา (HTML/Embed)', 
                 'ImageURL': 'ลิงก์รูปภาพ (URL)', 
-                // Removed Legacy Labels from Map
                 'Category': 'หมวดหมู่', 
                 'Name': 'ชื่อ-นามสกุล', 
                 'Position': 'ตำแหน่ง', 
@@ -809,7 +808,7 @@
                     }
                 }
                 
-                // Load Multi Data
+                // Load Multi Data with verification
                 if (tab === 'News') {
                     setTempAttachments(safeJsonParse(item.Multi_Attachments));
                     setTempLinks(safeJsonParse(item.Multi_Links));
@@ -864,11 +863,17 @@
                         let payload = { ...form, ID: idToUse };
                         if (tab === 'Pages') { payload.PageKey = idToUse; }
                         
+                        // FIX: Ensure Multi Data is always stringified array, even if empty
                         if (tab === 'News') {
                             if (!payload.Date) payload.Date = new Date();
-                            // Inject Multi Data
-                            payload.Multi_Attachments = JSON.stringify(tempAttachments);
-                            payload.Multi_Links = JSON.stringify(tempLinks);
+                            // Inject Multi Data properly
+                            payload.Multi_Attachments = JSON.stringify(Array.isArray(tempAttachments) ? tempAttachments : []);
+                            payload.Multi_Links = JSON.stringify(Array.isArray(tempLinks) ? tempLinks : []);
+                            
+                            // Clear Legacy Fields to avoid confusion
+                            payload.PDF_URL = '';
+                            payload.Link_URL = '';
+                            payload.Link_Label = '';
                         }
 
                         await api.post({ action: 'save', sheet: tab, data: payload }); 
@@ -1349,4 +1354,5 @@
     </script>
 </body>
 </html>
+
 
